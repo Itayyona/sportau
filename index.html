@@ -394,6 +394,137 @@
     .plan-card { color: #cccccc; }
     .history-item { color: #cccccc; }
   .chart-canvas { background: #141414; border-radius: 8px; width: 100% !important; }
+
+    /* ===== ACCESSIBILITY BUTTON & PANEL ===== */
+    #a11yBtn {
+      position: fixed;
+      bottom: 72px;
+      right: 16px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #0057b7;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 12px rgba(0,87,183,0.45);
+      padding: 0;
+    }
+    #a11yPanel {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 400;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #a11yPanel.open { display: flex; }
+    #a11yPanelBox {
+      background: #141414;
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 480px;
+      padding: 20px 20px 32px;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp .25s ease;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    #a11yPanelHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      direction: rtl;
+    }
+    #a11yPanelTitle {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+    #a11yPanelClose {
+      width: auto;
+      background: transparent;
+      border: none;
+      color: #888;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+    .a11y-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid #222;
+      direction: rtl;
+    }
+    .a11y-label { font-size: 15px; color: #ccc; }
+    .a11y-toggle {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .a11y-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .a11y-toggle-track {
+      position: absolute;
+      inset: 0;
+      background: #333;
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .a11y-toggle input:checked + .a11y-toggle-track { background: #adff2f; }
+    .a11y-toggle-track::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      top: 3px;
+      left: 3px;
+      transition: transform .2s;
+    }
+    .a11y-toggle input:checked + .a11y-toggle-track::after { transform: translateX(22px); }
+    #a11yReset {
+      width: 100%;
+      margin-top: 20px;
+      height: 48px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #ccc;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    /* Accessibility modes */
+    body.a11y-large-text { font-size: 120%; }
+    body.a11y-readable-font * { font-family: Arial, sans-serif !important; }
+    body.a11y-high-contrast,
+    body.a11y-high-contrast #app { background: #fff !important; color: #000 !important; }
+    body.a11y-high-contrast a { color: #9a6f00 !important; text-decoration: underline !important; }
+    body.a11y-high-contrast .portal-tab-bar { background: #fff !important; border-color: #000 !important; }
+    body.a11y-high-contrast .data-card,
+    body.a11y-high-contrast .client-row,
+    body.a11y-high-contrast .sheet-box,
+    body.a11y-high-contrast .plan-card,
+    body.a11y-high-contrast #a11yPanelBox { background: #f0f0f0 !important; color: #000 !important; border-color: #000 !important; }
+    body.a11y-highlight-links a,
+    body.a11y-highlight-links button { text-decoration: underline !important; }
+    body.a11y-stop-animations *,
+    body.a11y-stop-animations *::before,
+    body.a11y-stop-animations *::after { animation: none !important; transition: none !important; }
   </style>
 </head>
 <body>
@@ -2381,6 +2512,55 @@
     </g>
   </svg>
 
+  <!-- Accessibility button -->
+  <button id="a11yBtn" aria-label="פתח הגדרות נגישות">♿</button>
+
+  <!-- Accessibility panel -->
+  <div id="a11yPanel" role="dialog" aria-modal="true" aria-labelledby="a11yPanelTitle">
+    <div id="a11yPanelBox">
+      <div id="a11yPanelHeader">
+        <span id="a11yPanelTitle">הגדרות נגישות ♿</span>
+        <button id="a11yPanelClose" aria-label="סגור">✕</button>
+      </div>
+      <div class="a11y-row">
+        <span class="a11y-label">הגדל טקסט</span>
+        <label class="a11y-toggle" aria-label="הגדל טקסט">
+          <input type="checkbox" id="a11y-largeText">
+          <span class="a11y-toggle-track"></span>
+        </label>
+      </div>
+      <div class="a11y-row">
+        <span class="a11y-label">גופן קריא</span>
+        <label class="a11y-toggle" aria-label="גופן קריא">
+          <input type="checkbox" id="a11y-readableFont">
+          <span class="a11y-toggle-track"></span>
+        </label>
+      </div>
+      <div class="a11y-row">
+        <span class="a11y-label">ניגודיות גבוהה</span>
+        <label class="a11y-toggle" aria-label="ניגודיות גבוהה">
+          <input type="checkbox" id="a11y-highContrast">
+          <span class="a11y-toggle-track"></span>
+        </label>
+      </div>
+      <div class="a11y-row">
+        <span class="a11y-label">הדגש קישורים</span>
+        <label class="a11y-toggle" aria-label="הדגש קישורים">
+          <input type="checkbox" id="a11y-highlightLinks">
+          <span class="a11y-toggle-track"></span>
+        </label>
+      </div>
+      <div class="a11y-row">
+        <span class="a11y-label">עצור אנימציות</span>
+        <label class="a11y-toggle" aria-label="עצור אנימציות">
+          <input type="checkbox" id="a11y-stopAnimations">
+          <span class="a11y-toggle-track"></span>
+        </label>
+      </div>
+      <button id="a11yReset">איפוס</button>
+    </div>
+  </div>
+
   <a id="staffToggle" href="#" style="position:fixed;bottom:6px;left:6px;color:transparent;font-size:10px;text-decoration:none;user-select:none;">.</a>
   <script>
     document.getElementById('staffToggle').addEventListener('click', function (e) {
@@ -2389,6 +2569,52 @@
       sessionStorage.setItem('staffMode', next);
       location.reload();
     });
+  </script>
+  <script>
+    (function () {
+      var A11Y_KEY = 'a11ySettings';
+      var keys = ['largeText', 'readableFont', 'highContrast', 'highlightLinks', 'stopAnimations'];
+      var settings = { largeText: false, readableFont: false, highContrast: false, highlightLinks: false, stopAnimations: false };
+
+      function toClass(k) { return 'a11y-' + k.replace(/([A-Z])/g, '-$1').toLowerCase(); }
+      function load() {
+        try { var s = JSON.parse(localStorage.getItem(A11Y_KEY)); if (s) Object.assign(settings, s); } catch (e) {}
+      }
+      function save() { localStorage.setItem(A11Y_KEY, JSON.stringify(settings)); }
+      function apply() {
+        keys.forEach(function (k) { document.body.classList.toggle(toClass(k), settings[k]); });
+      }
+      function syncToggles() {
+        keys.forEach(function (k) { var el = document.getElementById('a11y-' + k); if (el) el.checked = settings[k]; });
+      }
+
+      load();
+      apply();
+
+      document.getElementById('a11yBtn').addEventListener('click', function () {
+        document.getElementById('a11yPanel').classList.add('open');
+        syncToggles();
+      });
+      document.getElementById('a11yPanelClose').addEventListener('click', function () {
+        document.getElementById('a11yPanel').classList.remove('open');
+      });
+      document.getElementById('a11yPanel').addEventListener('click', function (e) {
+        if (e.target === this) this.classList.remove('open');
+      });
+      keys.forEach(function (k) {
+        document.getElementById('a11y-' + k).addEventListener('change', function () {
+          settings[k] = this.checked;
+          save();
+          apply();
+        });
+      });
+      document.getElementById('a11yReset').addEventListener('click', function () {
+        keys.forEach(function (k) { settings[k] = false; });
+        save();
+        apply();
+        syncToggles();
+      });
+    })();
   </script>
 </body>
 </html>
