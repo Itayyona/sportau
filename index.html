@@ -1,0 +1,2394 @@
+﻿<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sportau</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: #0a0a0a;
+      color: #fff;
+      font-family: sans-serif;
+      direction: rtl;
+      text-align: right;
+    }
+    #app {
+      width: 100%;
+      min-height: 100vh;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #loginScreen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 340px;
+      padding: 0 24px;
+      gap: 20px;
+    }
+    #loginScreen > img { width: 110px; filter: invert(1); margin-bottom: 16px; }
+    h2 { font-size: 1.2rem; width: 100%; }
+    input[type="email"], input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #111;
+      color: #fff;
+      font-size: 1rem;
+      text-align: right;
+      direction: rtl;
+      outline: none;
+    }
+    input::placeholder { color: #888; }
+    /* Login inputs — underline only */
+    #emailInput, #passwordInput {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #333;
+      border-radius: 0;
+      padding: 14px 0;
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+    #emailInput::placeholder, #passwordInput::placeholder { color: #cccccc; }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      background: #fff;
+      color: #000;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    #submitBtn {
+      background: #c8ff00;
+      color: #000;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 4px;
+    }
+    #message { font-size: 0.95rem; }
+    #adminPanel { display: none; flex-direction: column; width: 100%; padding: 16px; gap: 0; }
+    #dauStrip { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
+    .dau-chip { display: flex; align-items: center; gap: 6px; background: #111; border-radius: 20px; padding: 6px 12px; font-size: 0.85rem; }
+    .dau-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    #clientList { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .client-row {
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: right;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+    .client-row:active { background: #111; }
+    .client-row .client-name { font-weight: bold; font-size: 1rem; }
+    .client-row .client-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.82rem; color: #aaa; }
+    .client-row .inactive-warn { color: #ff4444; font-size: 0.8rem; font-weight: bold; }
+    .btn-remove { position: absolute; left: 12px; top: 12px; width: auto; padding: 4px 10px; font-size: 0.75rem; background: #000; color: #ff4444; border: 1px solid #ff4444; border-radius: 6px; cursor: pointer; }
+    hr { border: none; border-top: 1px solid #333; width: 100%; }
+    #portalScreen { display: none; flex-direction: column; gap: 0; width: 100%; max-width: 480px; margin: 0 auto; padding: 0 16px 76px; }
+    #changeGoalScreen { display: none; flex-direction: column; gap: 20px; width: 100%; align-items: center; }
+    .btn-small { width: auto; padding: 6px 14px; font-size: 0.8rem; background: transparent; color: #555; border: 1px solid #2a2a2a; border-radius: 6px; cursor: pointer; align-self: flex-end; }
+    /* Portal header */
+    .portal-header { display: flex; justify-content: space-between; align-items: center; width: 100%; padding-bottom: 16px; border-bottom: 1px solid #1a1a1a; }
+    .goal-badge { background: #c8ff00; color: #000; font-weight: 700; font-size: 13px; padding: 4px 12px; border-radius: 20px; }
+    .streak-block { font-size: 13px; color: #ccc; }
+    .points-block { font-size: 13px; color: #ccc; }
+    /* Portal sections */
+    .portal-section { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    .portal-section-title { font-size: 13px; color: #888; text-align: right; margin-bottom: 4px; }
+    /* Check-in button */
+    .btn-checkin { background: #c8ff00; color: #000; font-weight: 700; font-size: 16px; height: 56px; border-radius: 12px; border: none; width: 100%; cursor: pointer; }
+    .btn-checkin:disabled { background: #1a1a1a; color: #555; cursor: default; }
+    .portal-feedback { font-size: 0.85rem; color: #c8ff00; text-align: center; min-height: 1.2em; }
+    /* Workout type grid */
+    .workout-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+    .workout-type-btn { padding: 14px 8px; font-size: 14px; background: #141414; color: #fff; border: 1px solid #222; border-radius: 10px; cursor: pointer; }
+    .workout-type-btn.selected { border-color: #c8ff00; color: #c8ff00; background: #141414; font-weight: 600; }
+    /* Portal inputs */
+    input[type="number"] { width: 100%; padding: 12px; border: 1px solid #222; border-radius: 10px; background: #141414; color: #fff; font-size: 14px; text-align: right; direction: rtl; outline: none; }
+    input[type="number"]::placeholder { color: #444; }
+    input[type="text"].portal-input { width: 100%; padding: 12px; border: 1px solid #222; border-radius: 10px; background: #141414; color: #fff; font-size: 14px; text-align: right; direction: rtl; outline: none; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    /* Portal textarea */
+    textarea.portal-notes { width: 100%; padding: 12px; background: #141414; border: 1px solid #222; border-radius: 10px; color: #fff; font-size: 14px; direction: rtl; resize: none; min-height: 80px; outline: none; }
+    textarea.portal-notes::placeholder { color: #444; }
+    /* Outline lime buttons (workout/nutrition submit) */
+    .btn-outline-lime { width: 100%; height: 48px; border: 1px solid #c8ff00; color: #c8ff00; background: transparent; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    /* Plan card */
+    .plan-card { width: 100%; background: #141414; border-radius: 12px; padding: 16px; white-space: pre-wrap; font-size: 14px; line-height: 1.6; color: #ccc; }
+    #clientDeepView { display: none; flex-direction: column; gap: 20px; width: 100%; align-items: center; }
+    .dv-header { width: 100%; background: #111; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+    .dv-header-name { font-size: 1.2rem; font-weight: bold; }
+    .dv-header-email { font-size: 0.8rem; color: #888; }
+    .dv-header-row { display: flex; gap: 12px; align-items: center; margin-top: 4px; }
+    .history-item { padding: 8px 0; border-bottom: 1px solid #222; font-size: 0.88rem; color: #ccc; }
+    .history-item:last-child { border-bottom: none; }
+    .empty-state { color: #555; font-size: 0.88rem; }
+    textarea.dv-textarea { width: 100%; min-height: 90px; padding: 10px; background: #000; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 0.9rem; direction: rtl; resize: vertical; }
+    .note-item { padding: 8px 0; border-bottom: 1px solid #222; font-size: 0.88rem; }
+    .note-item:last-child { border-bottom: none; }
+    .note-date { font-size: 0.75rem; color: #555; margin-bottom: 2px; }
+    .points-balance { font-size: 2rem; font-weight: bold; color: #adff2f; text-align: center; }
+    .reward-card { display: flex; justify-content: space-between; align-items: center; background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 12px 14px; gap: 10px; }
+    .reward-label { font-size: 0.95rem; flex: 1; }
+    .reward-cost { font-size: 0.8rem; color: #adff2f; white-space: nowrap; }
+    .btn-redeem { width: auto; padding: 8px 14px; font-size: 0.82rem; background: #adff2f; color: #000; font-weight: bold; border-radius: 6px; white-space: nowrap; }
+    .btn-redeem:disabled { background: #2a2a2a; color: #555; cursor: default; }
+    .redemption-item { background: #111; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+    .redemption-meta { font-size: 0.78rem; color: #555; }
+    .btn-done { width: auto; padding: 6px 14px; font-size: 0.8rem; background: #adff2f; color: #000; font-weight: bold; border-radius: 6px; margin-top: 6px; align-self: flex-start; }
+    .workout-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+    .workout-type-btn { padding: 14px 4px; font-size: 0.9rem; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; cursor: pointer; }
+    .workout-type-btn.selected { background: #141414; border-color: #c8ff00; color: #c8ff00; font-weight: bold; }
+    #onboardingScreen { display: none; flex-direction: column; gap: 20px; width: 100%; align-items: center; }
+    #onboardingGreeting { font-size: 1.4rem; font-weight: bold; width: 100%; text-align: center; }
+    .goal-buttons { display: flex; gap: 12px; width: 100%; }
+    .goal-buttons button { flex: 1; padding: 28px 0; font-size: 1.2rem; font-weight: bold; border: 2px solid #fff; background: #000; color: #fff; border-radius: 8px; }
+    .goal-buttons button.selected { background: #fff; color: #000; }
+    .file-section { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+    .file-label { font-size: 0.95rem; color: #aaa; text-align: center; }
+    input[type="file"] { width: 100%; font-size: 0.9rem; color: #fff; }
+    .data-card { width: 100%; background: #141414; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .data-card-title { font-size: 13px; font-weight: 700; color: #c8ff00; margin-bottom: 2px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-item { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { font-size: 11px; color: #555; }
+    .stat-val { font-size: 15px; font-weight: 600; color: #fff; }
+    .card-text { font-size: 14px; color: #ccc; white-space: pre-wrap; line-height: 1.7; }
+    .empty-card { color: #555; font-size: 13px; }
+    .measure-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .measure-table th { color: #555; font-weight: 400; padding: 4px 0; border-bottom: 1px solid #222; text-align: right; }
+    .measure-table td { color: #ccc; padding: 6px 0; border-bottom: 1px solid #1a1a1a; text-align: right; }
+    .dv-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+    .dv-stats-grid input { background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 10px; color: #fff; font-size: 13px; width: 100%; direction: rtl; outline: none; }
+    .dv-stats-grid input::placeholder { color: #444; }
+    /* Admin tabs */
+    .admin-tabs { display: flex; width: 100%; border-bottom: 2px solid #1a1a1a; margin-bottom: 20px; }
+    .admin-tab-btn { flex: 1; background: transparent; border: none; border-bottom: 3px solid transparent; margin-bottom: -2px; padding: 14px 0; color: #555; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .admin-tab-btn.active { color: #c8ff00; border-bottom-color: #c8ff00; }
+    .admin-tab-content { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+    /* Portal tab bar */
+    .portal-tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #0a0a0a; border-top: 1px solid #1a1a1a; display: flex; align-items: stretch; z-index: 100; max-width: 100%; }
+    .portal-tab-btn { flex: 1; background: transparent; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #555; cursor: pointer; padding: 0; }
+    .portal-tab-btn .tab-icon { font-size: 18px; line-height: 1; }
+    .portal-tab-btn .tab-label { font-size: 11px; line-height: 1; }
+    .portal-tab-btn.active { color: #c8ff00; }
+    .portal-tab-content { width: 100%; display: flex; flex-direction: column; gap: 24px; padding: 20px 0 8px; }
+    /* Step form */
+    .step-progress { display: flex; align-items: stretch; width: 100%; margin-bottom: 4px; }
+    .step-dot { flex: 1; background: transparent; border: 1px solid #2a2a2a; border-right: none; color: #555; padding: 10px 4px; font-size: 12px; cursor: pointer; text-align: center; line-height: 1.4; }
+    .step-dot:last-child { border-right: 1px solid #2a2a2a; border-radius: 0 8px 8px 0; }
+    .step-dot:first-child { border-radius: 8px 0 0 8px; }
+    .step-dot.active { background: #c8ff00; color: #000; border-color: #c8ff00; font-weight: 700; }
+    .step-dot small { font-size: 10px; opacity: 0.8; display: block; }
+    .dv-step { width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    .step-nav { display: flex; justify-content: space-between; align-items: center; width: 100%; padding-top: 16px; border-top: 1px solid #1a1a1a; }
+    /* Status cards */
+    .status-card { width: 100%; background: #111; border-radius: 10px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid #1a1a1a; }
+    .status-card-info { display: flex; flex-direction: column; gap: 4px; }
+    .status-card-name { font-weight: bold; font-size: 0.95rem; }
+    .status-card-meta { font-size: 0.8rem; color: #888; }
+    /* ---- Add client 3-step form ---- */
+    .add-step-indicator { display: flex; align-items: center; width: 100%; margin-bottom: 6px; direction: rtl; }
+    .add-step-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #2a2a2a; background: transparent; color: #555; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; transition: all .2s; }
+    .add-step-dot.active { border-color: #c8ff00; color: #c8ff00; }
+    .add-step-dot.done { border-color: #c8ff00; background: #c8ff00; color: #000; }
+    .add-step-line { flex: 1; height: 1px; background: #2a2a2a; }
+    .add-step-label-text { font-size: 12px; color: #666; text-align: center; margin: 6px 0 20px; }
+    .add-form-step { width: 100%; display: flex; flex-direction: column; gap: 0; }
+    /* Goal cards */
+    .add-goal-row { display: flex; gap: 12px; width: 100%; margin: 20px 0 4px; }
+    .add-goal-card { flex: 1; padding: 22px 0; font-size: 1.1rem; font-weight: 700; border: 2px solid #2a2a2a; background: transparent; color: #555; border-radius: 10px; cursor: pointer; transition: all .15s; }
+    .add-goal-card.selected { border-color: #c8ff00; color: #c8ff00; }
+    /* Section divider */
+    .section-divider { border: none; border-top: 1px solid #1a1a1a; margin: 20px 0 12px; }
+    .section-label-txt { font-size: 11px; color: #555; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; display: block; margin-bottom: 4px; }
+    /* Plan textarea label */
+    .plan-field-label { font-size: 13px; color: #888; margin: 20px 0 8px; font-weight: 600; }
+    /* Add form textarea */
+    .add-form-textarea { width: 100%; background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 10px; color: #fff; font-size: 14px; direction: rtl; padding: 12px; resize: vertical; outline: none; line-height: 1.6; font-family: inherit; }
+    .add-form-textarea:focus { border-color: #c8ff00; }
+    .add-form-textarea::placeholder { color: #3a3a3a; }
+    /* Underline input style — global for add form */
+    .field-underline { width: 100%; background: transparent; border: none; border-bottom: 1px solid #2a2a2a; color: #fff; padding: 16px 0; font-size: 15px; direction: rtl; outline: none; display: block; }
+    .field-underline:focus { border-bottom-color: #c8ff00; }
+    .field-underline::placeholder { color: #3a3a3a; }
+    input[type="date"].field-underline { color: #888; }
+    /* === BUTTON SYSTEM === */
+    .btn-checkin { background: linear-gradient(135deg,#c8ff00,#a8df00) !important; color: #000 !important; font-weight: 700; font-size: 16px; height: 52px; border-radius: 12px; border: none; width: 100%; cursor: pointer; }
+    .btn-checkin:disabled { background: #1a1a1a !important; color: #555 !important; cursor: default; }
+    .btn-outline-lime { width: 100%; height: 52px; border: 1px solid #c8ff00; color: #c8ff00; background: transparent; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    /* === DATA CARDS === */
+    .data-card { background: #141414; border-radius: 12px; padding: 16px; border-left: 3px solid #c8ff00; display: flex; flex-direction: column; gap: 10px; width: 100%; }
+    /* === AVATAR === */
+    .avatar { width: 40px; height: 40px; border-radius: 50%; background: #c8ff00; color: #000; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    /* === COCKPIT CARDS === */
+    .status-card { border-left: 4px solid #333; border-radius: 10px; background: #141414; padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; width: 100%; border-top:none;border-right:none;border-bottom:none; }
+    .status-card-body { flex: 1; min-width: 0; }
+    .status-card-name { font-weight: 700; font-size: 15px; }
+    .status-card-detail { font-size: 12px; color: #888; margin-top: 3px; }
+    .status-urgency { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; margin-top: 4px; display: inline-block; }
+    /* === SEARCH BAR === */
+    .search-bar { width: 100%; background: #111; border: 1px solid #222; border-radius: 10px; padding: 12px 16px; color: #fff; font-size: 15px; direction: rtl; outline: none; }
+    .search-bar:focus { border-color: #c8ff00; }
+    .search-bar::placeholder { color: #444; }
+    /* === BOTTOM SHEET === */
+    .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+    .sheet-overlay.open { display: flex; }
+    .sheet-box { background: #111; border-radius: 20px 20px 0 0; width: 100%; max-width: 480px; padding: 20px; display: flex; flex-direction: column; gap: 10px; animation: slideUp .25s ease; max-height: 90vh; overflow-y: auto; }
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .sheet-name { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+    .sheet-btn { width: 100%; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; border: 1px solid #2a2a2a; background: #1a1a1a; color: #fff; text-align: right; direction: rtl; }
+    .sheet-btn-wa { background: #0d2e0d; border-color: #25d366; color: #25d366; }
+    .sheet-btn-primary { background: linear-gradient(135deg,#c8ff00,#a8df00); color: #000; border: none; }
+    .sheet-close { background: transparent; border: none; color: #555; font-size: 13px; cursor: pointer; padding: 8px; width: 100%; text-align: center; }
+    .quick-form { display: none; flex-direction: column; gap: 10px; padding: 8px 0; }
+    /* === CELEBRATION OVERLAYS === */
+    .celeb-overlay { position: fixed; inset: 0; background: #000; z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+    .celeb-overlay.show { display: flex; }
+    .celeb-emoji { font-size: 80px; animation: bouncePop .4s ease; }
+    @keyframes bouncePop { 0%{transform:scale(0)} 70%{transform:scale(1.15)} 100%{transform:scale(1)} }
+    .celeb-number { font-size: 80px; font-weight: 900; color: #c8ff00; line-height: 1; }
+    .celeb-text { font-size: 22px; font-weight: 700; color: #fff; }
+    .celeb-sub { font-size: 15px; color: #888; }
+    .confetti-wrap { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 299; }
+    .confetti-dot { position: absolute; top: -12px; width: 9px; height: 9px; border-radius: 50%; animation: cfall linear forwards; }
+    @keyframes cfall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+    /* === WEEKLY SUMMARY === */
+    .wsummary-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.96); z-index: 250; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; gap: 20px; }
+    .wsummary-overlay.show { display: flex; }
+    .wsummary-card { background: #141414; border-radius: 14px; padding: 20px; width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 14px; }
+    .wsummary-row { display: flex; justify-content: space-between; font-size: 15px; color: #ccc; }
+    .wsummary-val { color: #c8ff00; font-weight: 700; }
+    /* === DAILY QUOTE === */
+    .daily-quote { background: #111; border-right: 3px solid #c8ff00; border-radius: 10px; padding: 13px 16px; font-size: 14px; color: #ccc; line-height: 1.5; width: 100%; }
+    /* === PROGRESS BAR === */
+    .reward-progress { width: 100%; }
+    .reward-progress-lbl { font-size: 12px; color: #888; margin-bottom: 6px; }
+    .reward-progress-bg { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; }
+    .reward-progress-fill { height: 100%; background: linear-gradient(90deg,#c8ff00,#a8df00); border-radius: 3px; transition: width .5s ease; }
+    /* === STEP INDICATOR - LTR === */
+    .add-step-indicator { direction: ltr !important; }
+    /* === FIELD LABEL === */
+    .field-label { font-size: 12px; color: #888; display: block; margin-bottom: 2px; }
+    /* === STEP NAV VERTICAL === */
+    .step-nav-v { display: flex; flex-direction: column; gap: 12px; margin-top: 28px; }
+    /* === STREAK SCALING === */
+    .streak-sm { font-size: 18px; }
+    .streak-md { font-size: 24px; }
+    .streak-lg { font-size: 32px; text-shadow: 0 0 10px #ff6600; }
+    .streak-xl { font-size: 40px; text-shadow: 0 0 20px #ff6600; }
+    /* === TAB TRANSITIONS === */
+    .portal-tab-content, .admin-tab-content { animation: tabIn .2s ease; }
+    @keyframes tabIn { from{opacity:0} to{opacity:1} }
+    /* === BULK TABLE === */
+    .bulk-wrap { width: 100%; overflow-x: auto; }
+    .bulk-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 400px; }
+    .bulk-table th { color: #888; font-weight: 600; padding: 10px 8px; border-bottom: 1px solid #1a1a1a; text-align: right; cursor: pointer; user-select: none; white-space: nowrap; }
+    .bulk-table th.sort-asc::after { content: ' ↑'; color: #c8ff00; }
+    .bulk-table th.sort-desc::after { content: ' ↓'; color: #c8ff00; }
+    .bulk-table td { color: #ccc; padding: 10px 8px; border-bottom: 1px solid #0f0f0f; text-align: right; }
+    /* === INPUT OVERRIDE - remove white backgrounds === */
+    input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="tel"], input[type="date"] { background: #111 !important; }
+    .field-underline { background: transparent !important; }
+    /* === REMOVE BTN-SMALL WHITE === */
+    .btn-small { background: transparent; color: #c8ff00; border: 1px solid #c8ff00; border-radius: 12px; height: 52px; padding: 0 20px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    /* === GOAL CARD in add form === */
+    .add-goal-card { flex: 1; padding: 22px 0; font-size: 1.1rem; font-weight: 700; border: 2px solid #2a2a2a; background: transparent; color: #555; border-radius: 12px; cursor: pointer; }
+    .add-goal-card.selected { border-color: #c8ff00; color: #c8ff00; background: rgba(200,255,0,0.05); }
+
+    /* ===== TEXT VISIBILITY ===== */
+
+    /* Universal placeholder color */
+    ::placeholder { color: #aaaaaa !important; }
+
+    /* Login screen inputs */
+    #emailInput, #passwordInput {
+      border-bottom: 1px solid #444444;
+      color: #ffffff;
+    }
+    #emailInput::placeholder, #passwordInput::placeholder { color: #aaaaaa; }
+
+    /* Field-underline inputs — brighter border, white text, visible placeholder */
+    .field-underline {
+      border-bottom: 1px solid #444444 !important;
+      color: #ffffff !important;
+    }
+    .field-underline::placeholder { color: #aaaaaa !important; }
+    input[type="date"].field-underline { color: #ffffff !important; }
+
+    /* Labels above inputs */
+    .field-label { color: #aaaaaa !important; font-size: 12px !important; }
+    .plan-field-label { color: #aaaaaa !important; font-size: 12px !important; }
+    .file-label { color: #aaaaaa; }
+
+    /* Section titles */
+    .portal-section-title { color: #ffffff !important; font-weight: 600 !important; font-size: 14px !important; }
+
+    /* Step indicator — inactive */
+    .step-dot { color: #666666 !important; border-color: #333333 !important; }
+    .step-dot.active { background: #c8ff00 !important; color: #000000 !important; border-color: #c8ff00 !important; }
+    .add-step-dot { color: #666666 !important; border-color: #333333 !important; }
+    .add-step-dot.active { background: #c8ff00 !important; color: #000000 !important; border-color: #c8ff00 !important; }
+    .add-step-label-text { color: #888888; }
+
+    /* Goal cards (unselected — was dark-on-dark #555) */
+    .add-goal-card { color: #aaaaaa !important; border-color: #333333 !important; }
+    .add-goal-card.selected { color: #c8ff00 !important; border-color: #c8ff00 !important; }
+
+    /* Inactive tab buttons */
+    .admin-tab-btn { color: #888888; }
+    .portal-tab-btn { color: #666666; }
+
+    /* Secondary / helper text — raise from #555 */
+    .stat-label { color: #888888 !important; }
+    .empty-card { color: #888888 !important; }
+    .empty-state { color: #888888 !important; }
+    .note-date { color: #888888 !important; }
+    .redemption-meta { color: #888888 !important; }
+    .measure-table th { color: #888888 !important; }
+    .section-label-txt { color: #888888 !important; }
+    .sheet-close { color: #888888; }
+    .dv-header-email { color: #888888; }
+
+    /* Textareas — brighter border, visible placeholder */
+    .add-form-textarea {
+      border: 1px solid #333333 !important;
+      color: #ffffff !important;
+    }
+    .add-form-textarea::placeholder { color: #aaaaaa !important; }
+    textarea.portal-notes::placeholder { color: #aaaaaa !important; }
+
+    /* Number inputs */
+    input[type="number"]::placeholder { color: #aaaaaa !important; }
+    input[type="number"] { border: 1px solid #333333 !important; }
+
+    /* Deep-view stats inputs */
+    .dv-stats-grid input { border: 1px solid #333333 !important; color: #ffffff !important; }
+    .dv-stats-grid input::placeholder { color: #aaaaaa !important; }
+
+    /* Search bar */
+    .search-bar { border: 1px solid #333333 !important; color: #ffffff !important; }
+    .search-bar::placeholder { color: #aaaaaa !important; }
+
+    /* Card / plan text */
+    .card-text { color: #cccccc; }
+    .plan-card { color: #cccccc; }
+    .history-item { color: #cccccc; }
+  .chart-canvas { background: #141414; border-radius: 8px; width: 100% !important; }
+  </style>
+</head>
+<body>
+  <div id="app">
+       <!-- Login screen -->
+    <div id="loginScreen">
+      <img src="data:image/png;base64,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" style="width:120px; filter:invert(1); display:block; margin:0 auto 24px;">
+      <input type="email" id="emailInput" placeholder="הזן את האימייל שלך">
+      <input type="password" id="passwordInput" placeholder="סיסמא" style="display:none">
+      <button id="submitBtn">כניסה</button>
+      <p id="message"></p>
+    </div>
+
+    <!-- Onboarding screen -->
+    <div id="onboardingScreen">
+      <p id="onboardingGreeting"></p>
+      <div class="goal-buttons">
+        <button id="goalChitur">חיטוב</button>
+        <button id="goalMasa">מסה</button>
+      </div>
+      <div class="file-section">
+        <p class="file-label">העלה את הקובץ שלך</p>
+        <input type="file" id="clientFile">
+      </div>
+      <button id="onboardingSubmit">המשך</button>
+      <p id="onboardingMessage"></p>
+    </div>
+
+    <!-- Client portal -->
+    <div id="portalScreen">
+
+      <!-- Tab 1: בית -->
+      <div class="portal-tab-content" id="portalTab-home">
+        <div class="portal-header">
+          <span class="points-block">⭐ <span id="portalPoints">0</span></span>
+          <span class="streak-block">🔥 <span id="portalStreak">0</span></span>
+          <span class="goal-badge" id="portalGoalBadge"></span>
+        </div>
+        <div style="display:flex;justify-content:center;padding:8px 0 0;"><img src="logo.png" style="width:80px;filter:invert(1);" onerror="this.style.display='none'"></div>
+        <div class="daily-quote" id="dailyQuote" style="margin:12px 16px 0;"></div>
+        <div class="portal-section">
+          <button class="btn-checkin" id="checkinBtn">צ׳ק אין יומי</button>
+          <p class="portal-feedback" id="checkinMsg"></p>
+        </div>
+        <div class="portal-section">
+          <div class="portal-section-title">אימון היום</div>
+          <div class="workout-type-grid" id="workoutTypeGrid">
+            <button class="workout-type-btn" data-type="גוף מלא">גוף מלא</button>
+            <button class="workout-type-btn" data-type="חזה">חזה</button>
+            <button class="workout-type-btn" data-type="גב">גב</button>
+            <button class="workout-type-btn" data-type="כתפיים">כתפיים</button>
+            <button class="workout-type-btn" data-type="רגליים">רגליים</button>
+            <button class="workout-type-btn" data-type="ידיים">ידיים</button>
+            <button class="workout-type-btn" data-type="בטן">בטן</button>
+            <button class="workout-type-btn" data-type="קרדיו">קרדיו</button>
+            <button class="workout-type-btn" data-type="אחר">אחר</button>
+          </div>
+          <div id="workoutNotesWrap" style="display:none; flex-direction:column; gap:10px;">
+            <textarea class="portal-notes" id="workoutNotes" placeholder="הערות..."></textarea>
+            <button class="btn-outline-lime" id="workoutSubmit">שמור אימון</button>
+          </div>
+          <p class="portal-feedback" id="workoutMsg"></p>
+        </div>
+        <div class="portal-section">
+          <div class="portal-section-title">תזונה</div>
+          <div class="form-row">
+            <input type="number" id="nutritionCalories" placeholder="קלוריות" min="0">
+            <input type="number" id="nutritionProtein" placeholder="חלבון (ג׳)" min="0">
+          </div>
+          <div class="form-row">
+            <input type="number" id="nutritionCarbs" placeholder="פחמימות (ג׳)" min="0">
+            <input type="number" id="nutritionFat" placeholder="שומן (ג׳)" min="0">
+          </div>
+          <button class="btn-outline-lime" id="nutritionSubmit">שמור תזונה</button>
+          <p class="portal-feedback" id="nutritionMsg"></p>
+        </div>
+        <div class="data-card" id="waterCard" style="background:#141414;border-left:3px solid #c8ff00;border-radius:12px;padding:16px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px;">
+          <div class="portal-section-title">כמה מים שתית היום? 💧</div>
+          <div id="waterLoggedDisplay" style="display:none;align-items:center;gap:10px;">
+            <span id="waterLoggedVal" style="font-size:1.1rem;font-weight:700;color:#c8ff00;"></span>
+            <button id="waterEditBtn" style="background:transparent;border:1px solid #333;color:#888;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;width:auto;">ערוך</button>
+          </div>
+          <div id="waterInputWrap" style="display:flex;flex-direction:column;gap:8px;">
+            <input type="number" id="waterInput" placeholder="ליטר" step="0.5" min="0" max="10" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;direction:rtl;outline:none;">
+            <button class="btn-outline-lime" id="waterSubmit" style="height:44px;">שמור</button>
+          </div>
+          <p class="portal-feedback" id="waterMsg"></p>
+        </div>
+        <div class="data-card" id="sleepCard" style="background:#141414;border-left:3px solid #c8ff00;border-radius:12px;padding:16px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px;">
+          <div class="portal-section-title">כמה שעות ישנת הלילה? 😴</div>
+          <div id="sleepLoggedDisplay" style="display:none;align-items:center;gap:10px;">
+            <span id="sleepLoggedVal" style="font-size:1.1rem;font-weight:700;color:#c8ff00;"></span>
+            <button id="sleepEditBtn" style="background:transparent;border:1px solid #333;color:#888;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;width:auto;">ערוך</button>
+          </div>
+          <div id="sleepInputWrap" style="display:flex;flex-direction:column;gap:8px;">
+            <input type="number" id="sleepInput" placeholder="שעות" step="0.5" min="0" max="24" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;direction:rtl;outline:none;">
+            <button class="btn-outline-lime" id="sleepSubmit" style="height:44px;">שמור</button>
+          </div>
+          <p class="portal-feedback" id="sleepMsg"></p>
+        </div>
+        <div class="data-card" id="portalStatsCard">
+          <div class="data-card-title">הנתונים שלי</div>
+          <div class="stats-grid" id="portalStatsGrid"></div>
+        </div>
+      </div>
+
+      <!-- Tab 2: תוכנית -->
+      <div class="portal-tab-content" id="portalTab-plan" style="display:none">
+        <div class="data-card" id="portalMenuCard">
+          <div class="data-card-title">תפריט שבועי</div>
+          <div id="portalMenuContent"></div>
+        </div>
+        <div class="data-card" id="portalWorkoutCard">
+          <div class="data-card-title">תוכנית אימון</div>
+          <div id="portalWorkoutContent"></div>
+        </div>
+        <div class="data-card" id="portalRulesCard">
+          <div class="data-card-title">הערות ודגשים</div>
+          <div id="portalRulesContent"></div>
+        </div>
+        <div class="data-card" style="background:#141414;border-left:3px solid #c8ff00;border-radius:12px;padding:16px;">
+          <div class="data-card-title">מתכונים בריאים 🥗</div>
+          <button class="btn-outline-lime" style="width:100%;height:44px;" onclick="window.open('https://huggingface.co/spaces/yonaitay/sportau_app','_blank')">לאתר המתכונים</button>
+        </div>
+        <div class="data-card" id="videoLibraryCard">
+          <div class="data-card-title">סרטוני הדרכה 🎬</div>
+          <div id="muscleTabsRow" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-top:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
+          <div id="videoGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;"></div>
+          <script>
+          (function(){
+            var groups = {
+              'חזה':['https://drive.google.com/file/d/1u2U8bpFKz6IXEsDVObW1qAhEzg1oVhKX/preview','https://drive.google.com/file/d/1A9fnxfqc076tjc2-hI4KHSohDsxhg1Br/preview','https://drive.google.com/file/d/1EDX6qIKS5nqoFpPDnSWXRMr2_ttb8W6j/preview','https://drive.google.com/file/d/1nnPPZzCHVjG7ccdDJxt9yUGFlLtXloof/preview','https://drive.google.com/file/d/1Q3b5zFoAEF1g__GHwCExN_93QXCGd2yt/preview','https://drive.google.com/file/d/1AmnDoBs6sViuxVtvRF1YsCxqCxqo_DF-/preview'],
+              'כתפיים':['https://drive.google.com/file/d/1SDZcBt_zlJW0XYhP557xorWIC32kBjMp/preview','https://drive.google.com/file/d/1_mlRAlIOIlU3D7OBDrbzPDwu-j_0_nxU/preview','https://drive.google.com/file/d/14anNOby_xp3uwUxpVWjbqQy7-ji6782W/preview','https://drive.google.com/file/d/1qScwaz6eu3Q-RDC71L7m1j1nm29miXEC/preview','https://drive.google.com/file/d/1zF06B-qI6vyzBv4gqtbAF4-JigoHIr3r/preview','https://drive.google.com/file/d/1RJaxSfixvU_LiPGmGs8B0RqSfLhKnq1v/preview'],
+              'גב':['https://drive.google.com/file/d/1WEgcoiK5RN0V2GzMkWiLgQsYMmvkhz6Q/preview','https://drive.google.com/file/d/1-eGrYvyNhltb4JjtuSg0fsJalCR44EX4/preview','https://drive.google.com/file/d/1Tcu4HXlZmIZyLFzv0FlfmloiEKuB7DRA/preview','https://drive.google.com/file/d/1q4LX-41t_SOBbCOaKNwhVZVa8K_XOPhj/preview','https://drive.google.com/file/d/1EVDbAFn3fEXzIzVS8aEy2AiRJVfpX4xN/preview','https://drive.google.com/file/d/1ABZw7YVcfiYxfembJPLxhjTlsfGAVre8/preview','https://drive.google.com/file/d/1NtF0V6pJuwZWylX90uB713lb328kbVoQ/preview'],
+              'רגליים':['https://drive.google.com/file/d/1yaBqFQxUgXg82YZReE7_1eERfm_kbRtT/preview','https://drive.google.com/file/d/1CAHRebqCT8QSgeGOLaVocF5kcpd-FfgM/preview','https://drive.google.com/file/d/1wSZvOcErwNBS7f_H_XSLJjyM8O1cIwJz/preview','https://drive.google.com/file/d/1X2uta3AU0SayWhdr0x2gY1Z_aHZ-N7Q5/preview','https://drive.google.com/file/d/1wLMcgGJAjpeeguW0se9GZWAZqY85w9Yz/preview','https://drive.google.com/file/d/1TzInnZr53o0FPpnL-RSjJ3133-XkKEfG/preview','https://drive.google.com/file/d/1zGjI5JUz9TsEHUxdHYgunsLGoHXfsjM0/preview','https://drive.google.com/file/d/1V7OeRIOgZVkyAnNyEqcZn8ZzP5g-6q0Z/preview','https://drive.google.com/file/d/1gnAj6FsltK8vHLOu5bSL23UYUNh3iqcy/preview'],
+              'בטן':['https://drive.google.com/file/d/1fqi178dfJc07-sH7A5IafnB7AZ7NH4be/preview','https://drive.google.com/file/d/1-o9VZq-VDzldjGDyDJJ8VRipo7PNW2Mh/preview','https://drive.google.com/file/d/10Yx3v6cR_iPchCbAF0oJrMCF73jJZE_H/preview','https://drive.google.com/file/d/1D0piz2BGIpGo1RxEbG32EuYblahc4ooQ/preview'],
+              'אגן':['https://drive.google.com/file/d/1H-qaVfkzvHYx-_I-9tbbimraW3Mo_meF/preview','https://drive.google.com/file/d/1k91-AtDGd7wqQlvtYQb7h_h93eAOQ-2G/preview'],
+              'יד קדמית':['https://drive.google.com/file/d/1InzgoMJLJuYVDdkAwjHb3oKfmGvyZHak/preview','https://drive.google.com/file/d/1qTh39lJgve6DEaGiRDkANcaLtvDDiB-A/preview','https://drive.google.com/file/d/11wWrtRj9m7nNQA1hwIqgbwcbPbE_fdC1/preview','https://drive.google.com/file/d/1qEXRAo1HZ41i4ICdQZ-z-ax6OwYJOurb/preview','https://drive.google.com/file/d/1yz5zwaz6lPjqmrl4Sw4y-ie-ZeTxOm-h/preview','https://drive.google.com/file/d/1qXAix7jHOFMa4grEFTucTQCnlGbcWA8L/preview'],
+              'יד אחורית':['https://drive.google.com/file/d/16DBUPSbAE8MZRj7IZfqjHXW0_D9etYFH/preview','https://drive.google.com/file/d/1SPgpaoSSsJWS7KweXLTHRqIU7XLzAJ6C/preview','https://drive.google.com/file/d/1tY0KDSrN4EB7ClXhDuJonuCwBNEpn_p0/preview','https://drive.google.com/file/d/1T-tamSH_AYE5OZYnkIBxV6iOOtlCFePb/preview','https://drive.google.com/file/d/1ZeTgIEpP_KJd77B97grI5PHQ4tkLJUBm/preview']
+            };
+            var labels = {
+              'חזה':['בנץ','בנץ עליון','מקבילים','פרפר (מכונה)','פרפר עליון כבלים','פרפר תחתון כבלים'],
+              'כתפיים':['פייס פול (משיכת פנים)','הרחקת כתפיים דמבלים','הרחקת כתפיים כבלים','לחיצת כתפיים','פרפר הפוך דמבלים','פרפר הפוך מכונה'],
+              'גב':['חתירה','חתירה במכונה','חתירה דמבלים','כפיפות גב בכסא רומי','מתח','פול אובר','פול דאון רחב'],
+              'רגליים':['גובלט סקוואט','כפיפת ירך בישיבה','כפיפת ירך בשכיבה','לאנג בולגרי','לג פרס','מקריבים','סקוואט','עליות תאומים'],
+              'בטן':['הנפות רגליים','טוויסט צידי חבל','כפיפות בטן','כפיפות מתפלל'],
+              'אגן':['היפ טראסט','הרחקות רגליים'],
+              'יד קדמית':['כפיפת מרפק דמבלים בשיפוע','כפיפת מרפק יד אחת כבלים','כפיפת מרפק מוט','פטישים עם דמבלים','פטישים עם חבל','פריצר עם דמבלים'],
+              'יד אחורית':['סקול קראש דמבלים','פשיטת מרפק כבל','פשיטת מרפק מעל הראש','פשיטת מרפק עם חבל','פשיטת מרפק מוט']
+            };
+            var order=['חזה','כתפיים','גב','רגליים','בטן','אגן','יד קדמית','יד אחורית'];
+            var active='חזה';
+            function renderTabs(){
+              var row=document.getElementById('muscleTabsRow');
+              row.innerHTML='';
+              order.forEach(function(name){
+                var btn=document.createElement('button');
+                btn.textContent=name;
+                var isActive=(name===active);
+                btn.style.cssText='flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;width:auto;'+(isActive?'background:#c8ff00;color:#000;border:none;':'background:#1a1a1a;color:#888;border:1px solid #333;');
+                btn.onclick=function(){active=name;renderTabs();renderGrid();};
+                row.appendChild(btn);
+              });
+            }
+            function renderGrid(){
+              var grid=document.getElementById('videoGrid');
+              grid.innerHTML='';
+              var videos=groups[active]||[];
+              videos.forEach(function(url,i){
+                var card=document.createElement('div');
+                card.style.cssText='background:#141414;border-radius:12px;padding:16px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;';
+                var lbl=document.createElement('div');
+                lbl.textContent=(labels[active]&&labels[active][i])||active+' '+(i+1);
+                lbl.style.cssText='font-size:13px;color:#fff;font-weight:600;';
+                var btn=document.createElement('button');
+                btn.textContent='▶ צפה בסרטון';
+                btn.style.cssText='background:#c8ff00;color:#000;font-weight:700;font-size:13px;padding:8px 14px;border-radius:8px;border:none;cursor:pointer;width:100%;';
+                btn.onclick=(function(u){return function(){window.open(u,'_blank');};})(url);
+                card.appendChild(lbl);
+                card.appendChild(btn);
+                grid.appendChild(card);
+              });
+            }
+            renderTabs();
+            renderGrid();
+          })();
+          </script>
+        </div>
+      </div>
+
+      <!-- Tab 3: התקדמות -->
+      <div class="portal-tab-content" id="portalTab-stats" style="display:none">
+        <div class="data-card">
+          <div class="data-card-title">משקל (ק״ג)</div>
+          <canvas id="portalWeightChart" class="chart-canvas" height="180"></canvas>
+        </div>
+        <div class="data-card">
+          <div class="data-card-title">% שומן</div>
+          <canvas id="portalFatChart" class="chart-canvas" height="180"></canvas>
+        </div>
+        <div class="data-card" id="portalMeasurementsCard">
+          <div class="data-card-title">התקדמות</div>
+          <div id="portalMeasurementsContent"></div>
+        </div>
+      </div>
+
+      <!-- Tab 4: פרסים -->
+      <div class="portal-tab-content" id="portalTab-rewards" style="display:none">
+        <div class="portal-section">
+          <div class="portal-section-title">פרסים 🏆</div>
+          <div class="points-balance" id="rewardsBalance">0 נקודות</div>
+          <div class="reward-progress" id="rewardProgressWrap" style="width:100%;background:#222;border-radius:3px;height:6px;margin:8px 0 16px;">
+            <div class="reward-progress-fill" id="rewardProgressFill" style="width:0%;"></div>
+          </div>
+          <div style="font-size:11px;color:#666;text-align:center;margin-top:-12px;margin-bottom:12px;" id="rewardProgressLabel"></div>
+          <div id="rewardsCatalog" style="display:flex;flex-direction:column;gap:10px;width:100%;"></div>
+          <p class="portal-feedback" id="rewardsMsg"></p>
+        </div>
+        <button class="btn-small" id="changeGoalBtn">שנה מטרה</button>
+      </div>
+
+      <!-- WhatsApp fixed button -->
+      <button onclick="window.open('https://wa.me/972524046296','_blank')" style="position:fixed;bottom:70px;left:16px;width:52px;height:52px;border-radius:50%;background:#25D366;border:none;font-size:24px;cursor:pointer;z-index:100;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.4);">💬</button>
+
+      <!-- Bottom tab bar -->
+      <div class="portal-tab-bar">
+        <button class="portal-tab-btn active" data-tab="home">
+          <span class="tab-icon">🏠</span><span class="tab-label">בית</span>
+        </button>
+        <button class="portal-tab-btn" data-tab="plan">
+          <span class="tab-icon">📋</span><span class="tab-label">תוכנית</span>
+        </button>
+        <button class="portal-tab-btn" data-tab="stats">
+          <span class="tab-icon">📊</span><span class="tab-label">התקדמות</span>
+        </button>
+        <button class="portal-tab-btn" data-tab="rewards">
+          <span class="tab-icon">🎁</span><span class="tab-label">פרסים</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Change goal screen -->
+    <div id="changeGoalScreen">
+      <p style="font-size:1.1rem; font-weight:bold; text-align:center;">שנה מטרה</p>
+      <div class="goal-buttons">
+        <button id="goalChiturChange">חיטוב</button>
+        <button id="goalMasaChange">מסה</button>
+      </div>
+      <div class="file-section">
+        <p class="file-label">העלה את הקובץ שלך</p>
+        <input type="file" id="clientFileChange">
+      </div>
+      <button id="changeGoalSubmit">שמור</button>
+      <button class="btn-small" id="changeGoalCancel">ביטול</button>
+      <p id="changeGoalMessage"></p>
+    </div>
+
+    <!-- Client deep view (admin) -->
+    <div id="clientDeepView">
+      <div class="dv-header">
+        <div class="dv-header-name" id="dvName"></div>
+        <div class="dv-header-email" id="dvEmail"></div>
+        <div class="dv-header-row">
+          <span class="goal-badge" id="dvGoalBadge"></span>
+          <span class="streak-block">🔥 <span id="dvStreak"></span></span>
+          <span class="points-block">⭐ <span id="dvPoints"></span></span>
+        </div>
+      </div>
+      <div class="step-progress">
+        <button class="step-dot active" data-step="1">פרטים<br><small>1/3</small></button>
+        <button class="step-dot" data-step="2">תוכנית<br><small>2/3</small></button>
+        <button class="step-dot" data-step="3">התקדמות<br><small>3/3</small></button>
+      </div>
+      <!-- Step 1 -->
+      <div class="dv-step" id="dvStep1">
+        <div class="portal-section">
+          <h3>נתונים אישיים</h3>
+          <div class="dv-stats-grid">
+            <input type="number" id="dvHeight" placeholder="גובה (ס״מ)">
+            <input type="number" id="dvWeight" placeholder="משקל (ק״ג)">
+            <input type="number" id="dvBelly" placeholder="מדידת בטן (ס״מ)">
+            <input type="number" id="dvNeck" placeholder="מדידת צוואר (ס״מ)">
+            <input type="number" id="dvFatPct" placeholder="שומן גוף (%)">
+            <input type="number" id="dvRmr" placeholder="RMR">
+            <input type="number" id="dvCalorieBurn" placeholder="שריפת קלוריות יומית">
+            <input type="number" id="dvCalorieMin" placeholder="יעד קלורי מינימום">
+            <input type="number" id="dvCalorieMax" placeholder="יעד קלורי מקסימום">
+            <input type="number" id="dvProteinTarget" placeholder="יעד חלבון (ג׳)">
+            <input type="number" id="dvBmi" placeholder="BMI">
+          </div>
+          <button id="dvStatsSaveBtn" class="btn-outline-lime">שמור נתונים</button>
+          <p class="portal-feedback" id="dvStatsMsg"></p>
+        </div>
+        <div class="portal-section">
+          <h3>הענק נקודות</h3>
+          <input type="number" id="dvPointsAmount" placeholder="כמות נקודות" min="1">
+          <input type="text" class="portal-input" id="dvPointsReason" placeholder="סיבה">
+          <button id="dvPointsBtn" class="btn-outline-lime">הענק נקודות</button>
+          <p class="portal-feedback" id="dvPointsMsg"></p>
+        </div>
+        <div class="portal-section">
+          <h3>היסטוריית צ׳ק אין</h3>
+          <div id="dvCheckins"></div>
+        </div>
+        <div class="portal-section">
+          <h3>היסטוריית אימונים</h3>
+          <div id="dvWorkouts"></div>
+        </div>
+        <div class="portal-section">
+          <h3>היסטוריית תזונה</h3>
+          <div id="dvNutrition"></div>
+        </div>
+        <div class="portal-section">
+          <h3>היסטוריית מים 💧</h3>
+          <div id="dvWaterLog"></div>
+        </div>
+        <div class="portal-section">
+          <h3>היסטוריית צעדים 🚶</h3>
+          <div id="dvStepsLog"></div>
+        </div>
+        <div class="portal-section">
+          <h3>היסטוריית שינה 😴</h3>
+          <div id="dvSleepLog"></div>
+        </div>
+        <div class="step-nav">
+          <span></span>
+          <button class="btn-outline-lime" id="dvStep1Next" style="width:auto;padding:12px 28px;">הבא ←</button>
+        </div>
+      </div>
+      <!-- Step 2 -->
+      <div class="dv-step" id="dvStep2" style="display:none">
+        <div class="portal-section">
+          <h3>תפריט שבועי</h3>
+          <label for="dvNutritionFileInput" style="display:block;border:2px dashed #444;border-radius:12px;padding:24px;text-align:center;cursor:pointer;color:#888;">
+            <span id="dvNutritionFileLabel">📁 העלא תפריט שבועי (Word)</span>
+            <input type="file" id="dvNutritionFileInput" accept=".docx" style="display:none;" onchange="handleDvNutritionFile(this)">
+          </label>
+          <p class="portal-feedback" id="dvMenuMsg"></p>
+        </div>
+        <div class="portal-section">
+          <h3>תוכנית אימון</h3>
+          <label for="dvWorkoutFileInput" style="display:block;border:2px dashed #444;border-radius:12px;padding:24px;text-align:center;cursor:pointer;color:#888;">
+            <span id="dvWorkoutFileLabel">📁 העלא תוכנית אימונים (Excel)</span>
+            <input type="file" id="dvWorkoutFileInput" accept=".xlsx" style="display:none;" onchange="handleDvWorkoutFile(this)">
+          </label>
+          <p class="portal-feedback" id="dvWorkoutPlanMsg"></p>
+        </div>
+        <div class="portal-section">
+          <h3>הערות ודגשים</h3>
+          <textarea class="dv-textarea" id="dvRules" placeholder="הערות ודגשים ללקוח..."></textarea>
+          <button id="dvRulesSaveBtn" class="btn-outline-lime">שמור הערות</button>
+          <p class="portal-feedback" id="dvRulesMsg"></p>
+        </div>
+        <div class="portal-section">
+          <h3>הערות פרטיות</h3>
+          <textarea class="dv-textarea" id="dvNoteInput" placeholder="הערה חדשה..."></textarea>
+          <button id="dvNoteBtn" class="btn-outline-lime">הוסף הערה</button>
+          <div id="dvNotesList" style="margin-top:8px;"></div>
+        </div>
+        <div class="step-nav">
+          <button class="btn-small" id="dvStep2Back">→ חזור</button>
+          <button class="btn-outline-lime" id="dvStep2Next" style="width:auto;padding:12px 28px;">הבא ←</button>
+        </div>
+      </div>
+      <!-- Step 3 -->
+      <div class="dv-step" id="dvStep3" style="display:none">
+        <div class="portal-section">
+          <h3>מעקב חודשי</h3>
+          <div class="dv-stats-grid">
+            <input type="date" id="dvTrackDate">
+            <input type="number" id="dvTrackFat" placeholder="שומן (%)">
+            <input type="number" id="dvTrackWeight" placeholder="משקל">
+            <input type="number" id="dvTrackBelly" placeholder="בטן (ס״מ)">
+            <input type="number" id="dvTrackArm" placeholder="היקף יד (ס״מ)">
+            <input type="number" id="dvTrackNeck" placeholder="צוואר (ס״מ)">
+            <input type="number" id="dvTrackRmr" placeholder="RMR">
+            <input type="number" id="dvTrackBmi" placeholder="BMI">
+          </div>
+          <button id="dvTrackAddBtn" class="btn-outline-lime">הוסף מדידה</button>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px;width:100%;">
+            <div class="data-card" style="padding:12px;">
+              <div class="data-card-title">משקל (ק״ג)</div>
+              <canvas id="dvWeightChart" class="chart-canvas" height="160"></canvas>
+            </div>
+            <div class="data-card" style="padding:12px;">
+              <div class="data-card-title">% שומן</div>
+              <canvas id="dvFatChart" class="chart-canvas" height="160"></canvas>
+            </div>
+          </div>
+          <div id="dvTrackHistory" style="margin-top:8px;overflow-x:auto;"></div>
+        </div>
+        <div class="step-nav">
+          <button class="btn-small" id="dvStep3Back">→ חזור</button>
+          <span></span>
+        </div>
+      </div>
+      <button class="btn-small" id="dvBackBtn" style="align-self:flex-start;margin-top:8px;">→ חזור לרשימה</button>
+    </div>
+
+    <!-- Admin panel (shown after login) -->
+    <div id="adminPanel">
+      <div class="admin-tabs">
+        <button class="admin-tab-btn active" data-tab="dashboard">לוח בקרה</button>
+        <button class="admin-tab-btn" data-tab="clients">לקוחות</button>
+        <button class="admin-tab-btn" data-tab="data">נתונים 📊</button>
+      </div>
+      <div class="admin-tab-content" id="adminTab-dashboard">
+        <div id="dauStrip"></div>
+        <div id="clientStatusCards" style="display:flex;flex-direction:column;gap:10px;width:100%;"></div>
+        <div style="font-size:13px;color:#888;padding:8px 0 0;">בקשות מימוש 🎁</div>
+        <div id="redemptionsQueue" style="display:flex;flex-direction:column;gap:10px;width:100%;"></div>
+      </div>
+      <div class="admin-tab-content" id="adminTab-clients" style="display:none">
+        <button class="btn-checkin" id="showAddClientBtn" style="height:48px;font-size:15px;">+ הוסף לקוח</button>
+        <input class="search-bar" id="clientSearchBar" placeholder="🔍 חפש לקוח..." style="margin-bottom:12px;">
+        <div id="clientList"></div>
+        <div id="addClientForm" style="display:none;flex-direction:column;gap:0;padding-top:24px;">
+          <!-- Step indicator -->
+          <div class="add-step-indicator">
+            <span class="add-step-dot active" data-step="1">1</span>
+            <span class="add-step-line"></span>
+            <span class="add-step-dot" data-step="2">2</span>
+            <span class="add-step-line"></span>
+            <span class="add-step-dot" data-step="3">3</span>
+          </div>
+          <div id="addStepLabel" class="add-step-label-text">שלב 1 מתוך 3 — פרטים אישיים</div>
+          <!-- Step 1 -->
+          <div class="add-form-step" id="addFormStep1" style="display:flex;flex-direction:column;gap:24px;">
+            <div><label class="field-label">שם מלא</label><input type="text" class="field-underline" id="newName" placeholder="ישראל ישראלי"></div>
+            <div><label class="field-label">אימייל</label><input type="email" class="field-underline" id="newEmail" placeholder="email@example.com"></div>
+            <div><label class="field-label">טלפון (אופציונלי)</label><input type="tel" class="field-underline" id="addPhone" placeholder="05X-XXXXXXX"></div>
+            <div>
+              <label class="field-label">מטרה</label>
+              <div class="add-goal-row" style="margin-top:8px;">
+                <button class="add-goal-card" data-goal="חיטוב">חיטוב</button>
+                <button class="add-goal-card" data-goal="מסה">מסה</button>
+              </div>
+            </div>
+            <div><label class="field-label">תמונת פרופיל (אופציונלי)</label><input type="file" id="addPhoto" accept="image/*" style="color:#666;font-size:13px;padding:8px 0;width:100%;"></div>
+            <div>
+              <label class="field-label">יעד קלורי</label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input type="number" class="field-underline" id="addCalorieMin" placeholder="מינימום" style="flex:1;">
+                <span style="color:#888;flex-shrink:0;padding-bottom:4px;">—</span>
+                <input type="number" class="field-underline" id="addCalorieMax" placeholder="מקסימום" style="flex:1;">
+              </div>
+            </div>
+            <button class="btn-checkin" id="addStep1Next">הבא</button>
+          </div>
+          <!-- Step 2 -->
+          <div class="add-form-step" id="addFormStep2" style="display:none;gap:16px;">
+            <div style="display:flex;flex-direction:column;gap:24px;">
+
+              <div>
+                <p style="color:#aaa;font-size:13px;margin-bottom:12px;">תפריט שבועי</p>
+                <label for="nutritionFileInput" style="display:block;border:2px dashed #444;border-radius:12px;padding:32px 16px;text-align:center;cursor:pointer;color:#888;">
+                  <span id="nutritionFileLabel">📁 לחץ להעלאת קובץ Word</span>
+                  <input type="file" id="nutritionFileInput" accept=".docx" style="display:none;" onchange="handleNutritionFile(this)">
+                </label>
+              </div>
+
+              <div>
+                <p style="color:#aaa;font-size:13px;margin-bottom:12px;">תוכנית אימונים</p>
+                <label for="workoutFileInput" style="display:block;border:2px dashed #444;border-radius:12px;padding:32px 16px;text-align:center;cursor:pointer;color:#888;">
+                  <span id="workoutFileLabel">📁 לחץ להעלאת קובץ Excel</span>
+                  <input type="file" id="workoutFileInput" accept=".xlsx" style="display:none;" onchange="handleWorkoutFile(this)">
+                </label>
+              </div>
+
+            </div>
+            <div class="step-nav-v">
+              <button class="btn-checkin" id="addStep2Next">הבא</button>
+              <button class="btn-outline-lime" id="addStep2Back">חזור</button>
+            </div>
+          </div>
+          <!-- Step 3 -->
+          <div class="add-form-step" id="addFormStep3" style="display:none">
+            <input type="date" class="field-underline" id="addTrackDate">
+            <input type="number" class="field-underline" id="addTrackWeight" placeholder="משקל">
+            <input type="number" class="field-underline" id="addTrackFat" placeholder="שומן (%)">
+            <input type="number" class="field-underline" id="addTrackBelly" placeholder="היקף בטן (ס״מ)">
+            <input type="number" class="field-underline" id="addTrackArm" placeholder="היקף יד (ס״מ)">
+            <button class="btn-outline-lime" id="addTrackAddBtn" style="margin-top:20px;">+ הוסף מדידה</button>
+            <div id="addTrackHistory" style="margin-top:12px;overflow-x:auto;"></div>
+            <div class="step-nav-v">
+              <button class="btn-checkin" id="addClientFinalBtn">שמור והסתיים ✓</button>
+              <button class="btn-outline-lime" id="addStep3Back">חזור</button>
+            </div>
+            <p id="addMessage" class="portal-feedback" style="margin-top:8px;"></p>
+          </div>
+        </div>
+    </div>
+      <div class="admin-tab-content" id="adminTab-data" style="display:none">
+        <div style="overflow-x:auto;">
+          <table class="bulk-table" id="bulkTable">
+            <thead>
+              <tr>
+                <th data-col="name">שם</th>
+                <th data-col="lastCheckin">צ׳ק אין</th>
+                <th data-col="weight">משקל</th>
+                <th data-col="belly">בטן</th>
+                <th data-col="fat">שומן%</th>
+                <th data-col="streak">סטריק</th>
+              </tr>
+            </thead>
+            <tbody id="bulkTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overlays -->
+    <div id="checkinCelebration" class="celeb-overlay">
+      <div class="confetti-wrap" id="confettiWrap"></div>
+      <div class="celeb-emoji">🔥</div>
+      <div class="celeb-number" id="celebStreakNum">0</div>
+      <div class="celeb-text" id="celebName">כל הכבוד!</div>
+    </div>
+    <div id="workoutCelebration" class="celeb-overlay">
+      <div class="celeb-emoji">💥</div>
+      <div class="celeb-text" id="wCelebName">כל הכבוד!</div>
+      <div class="celeb-sub" id="wCelebType"></div>
+    </div>
+    <div id="weeklySummary" class="wsummary-overlay">
+      <div style="font-size:26px;font-weight:900;color:#fff;">סיכום שבועי 💪</div>
+      <div class="wsummary-card">
+        <div class="wsummary-row"><span>אימונים השבוע</span><span class="wsummary-val" id="wsWorkouts">0</span></div>
+        <div class="wsummary-row"><span>תזונה מתועדת</span><span class="wsummary-val" id="wsNutrition">0</span></div>
+        <div class="wsummary-row"><span>סטריק נוכחי</span><span class="wsummary-val" id="wsStreak">0</span></div>
+      </div>
+      <button class="btn-outline-lime" style="max-width:200px;" id="wsDismiss">סגור</button>
+    </div>
+    <div id="bottomSheet" class="sheet-overlay">
+      <div class="sheet-box">
+        <div class="sheet-name" id="sheetClientName"></div>
+        <button class="sheet-btn sheet-btn-primary" id="sheetViewProfile">📋 צפה בפרופיל</button>
+        <button class="sheet-btn" id="sheetAddMeasure">📊 הוסף מדידה</button>
+        <div class="quick-form" id="sheetMeasureForm">
+          <input type="number" class="field-underline" id="sheetWeight" placeholder="משקל (ק״ג)">
+          <input type="number" class="field-underline" id="sheetBelly" placeholder="היקף בטן (ס״מ)">
+          <button class="btn-checkin" id="sheetMeasureSave" style="height:44px;font-size:14px;">שמור מדידה</button>
+        </div>
+        <button class="sheet-btn" id="sheetGrantPoints">⭐ הענק נקודות</button>
+        <div class="quick-form" id="sheetPointsForm">
+          <input type="number" class="field-underline" id="sheetPointsAmt" placeholder="כמות נקודות">
+          <input type="text" class="field-underline" id="sheetPointsReason" placeholder="סיבה">
+          <button class="btn-checkin" id="sheetPointsSave" style="height:44px;font-size:14px;">הענק</button>
+        </div>
+        <button class="sheet-btn sheet-btn-wa" id="sheetWhatsapp" style="display:none;">💬 WhatsApp</button>
+        <button class="sheet-close" id="sheetClose">סגור ✕</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+
+
+    (function initNotifications() {
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+      function requestPermission() {
+        if (Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
+      }
+
+      requestPermission();
+
+      function checkNutritionReminder() {
+        if (Notification.permission !== 'granted') return;
+        const now = new Date();
+        if (now.getHours() !== 20 || now.getMinutes() !== 30) return;
+        const todayKey = 'nutritionNotif_' + now.toISOString().slice(0, 10);
+        if (localStorage.getItem(todayKey)) return;
+        localStorage.setItem(todayKey, '1');
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification('Sportau 🍽️', {
+            body: 'מה אכלת היום? 🍽️ אל תשכח לתעד את התזונה שלך',
+            icon: 'manifest.json',
+            tag: 'nutrition-reminder',
+            renotify: false
+          });
+        });
+      }
+
+      setInterval(checkNutritionReminder, 60000);
+    })();
+
+    (function seedDefaultClient() {
+      const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+      if (!clients.some(c => c.email === 'itayyona6@gmail.com')) {
+        clients.unshift({
+          id: 1,
+          name: 'איתי',
+          email: 'itayyona6@gmail.com',
+          goal: null,
+          filename: null,
+          onboarded: false,
+          joinedAt: new Date().toISOString(),
+          streak: 0,
+          lastCheckIn: null,
+          points: 0
+        });
+        localStorage.setItem('clients', JSON.stringify(clients));
+      }
+    })();
+
+    const isAdmin = (function () {
+      try {
+        if (new URLSearchParams(location.search).get('staff') === '1') return true;
+        if (location.href.indexOf('staff=1') !== -1) return true;
+      } catch (e) {}
+      return sessionStorage.getItem('staffMode') === '1';
+    })();
+
+    if (isAdmin) {
+      document.getElementById('emailInput').style.display = 'none';
+      document.getElementById('passwordInput').style.display = '';
+    }
+
+    const REWARDS = [
+      { id: 'analysis', label: 'ניתוח אימון 🎥',    desc: 'שלח סרטונים של תרגילים וקבל פידבק מדויק מאלמוג', cost: 3000 },
+      { id: 'session',  label: 'אימון אישי 1-1 💪', desc: 'הזמנה לאימון אישי עם אלמוג',                      cost: 8500 },
+      { id: 'extend',   label: 'הארכת תהליך 📅',   desc: 'הארכה של שבועיים בתהליך שלך',                      cost: 12000 },
+    ];
+
+    function addToLedger(clientId, type, amount, reason) {
+      const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
+      ledger.push({ clientId, type, amount, reason, date: todayStr() });
+      localStorage.setItem('pointsLedger', JSON.stringify(ledger));
+    }
+
+    let selectedGoal = null;
+    let selectedGoalChange = null;
+    let currentClientEmail = null;
+
+    document.getElementById('goalChitur').addEventListener('click', function () {
+      selectedGoal = 'חיטוב';
+      this.classList.add('selected');
+      document.getElementById('goalMasa').classList.remove('selected');
+    });
+
+    document.getElementById('goalMasa').addEventListener('click', function () {
+      selectedGoal = 'מסה';
+      this.classList.add('selected');
+      document.getElementById('goalChitur').classList.remove('selected');
+    });
+
+    function hideAllScreens() {
+      ['loginScreen',
+       'onboardingScreen','portalScreen','changeGoalScreen','adminPanel','clientDeepView',
+       'checkinMsg','workoutMsg','nutritionMsg'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    }
+
+    function todayStr() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function showPortal(client) {
+      hideAllScreens();
+      document.getElementById('portalGoalBadge').textContent = client.goal || '—';
+      document.getElementById('portalStreak').textContent = client.streak || 0;
+      document.getElementById('portalPoints').textContent = client.points || 0;
+      // Daily quote
+      const dqEl = document.getElementById('dailyQuote');
+      if (dqEl) dqEl.textContent = getDailyQuote();
+      // Weekly summary (Sundays only)
+      checkWeeklySummary(client);
+      // Streak emoji scaling
+      const strVal = client.streak || 0;
+      const strBlock = document.getElementById('portalStreak').parentElement;
+      strBlock.className = strBlock.className.replace(/streak-\w+\s*/g, '').trim();
+      strBlock.classList.add(strVal >= 60 ? 'streak-xl' : strVal >= 30 ? 'streak-lg' : strVal >= 7 ? 'streak-md' : 'streak-sm');
+
+      const alreadyCheckedIn = client.lastCheckIn === todayStr();
+      const btn = document.getElementById('checkinBtn');
+      btn.disabled = alreadyCheckedIn;
+      document.getElementById('checkinMsg').textContent = alreadyCheckedIn ? "כבר צ'קת אין היום" : '';
+
+      document.getElementById('workoutMsg').textContent = '';
+      document.getElementById('nutritionMsg').textContent = '';
+
+      // Stats card
+      const s = client.stats || {};
+      const statsFields = [
+        { label: 'משקל', val: s.weight ? s.weight + ' ק״ג' : null },
+        { label: '% שומן', val: s.fatPct ? s.fatPct + '%' : null },
+        { label: 'BMI', val: s.bmi || null },
+        { label: 'יעד קלורי', val: (s.calorieMin && s.calorieMax) ? s.calorieMin + '–' + s.calorieMax : (s.calorieMin || s.calorieMax || null) },
+        { label: 'יעד חלבון', val: s.proteinTarget ? s.proteinTarget + ' ג׳' : null },
+        { label: 'גובה', val: s.height ? s.height + ' ס״מ' : null },
+      ];
+      const hasStats = statsFields.some(f => f.val);
+      document.getElementById('portalStatsGrid').innerHTML = hasStats
+        ? statsFields.filter(f => f.val).map(f => `<div class="stat-item"><div class="stat-label">${f.label}</div><div class="stat-val">${f.val}</div></div>`).join('')
+        : '<span class="empty-card">אלמוג טרם הוסיף מידע</span>';
+
+      // Menu card
+      if (client.nutritionPlanFile) {
+        document.getElementById('portalMenuContent').innerHTML = `<button class="btn-outline-lime" onclick="downloadPlanFile('${client.id}','nutrition')">הורד תפריט 📥</button>`;
+      } else {
+        document.getElementById('portalMenuContent').innerHTML = client.menuPlan
+          ? `<div class="card-text">${client.menuPlan}</div>`
+          : '<span class="empty-card">אלמוג טרם הוסיף מידע</span>';
+      }
+
+      // Workout plan card
+      if (client.workoutPlanFile) {
+        document.getElementById('portalWorkoutContent').innerHTML = `<button class="btn-outline-lime" onclick="downloadPlanFile('${client.id}','workout')">הורד תוכנית אימונים 📥</button>`;
+      } else {
+        document.getElementById('portalWorkoutContent').innerHTML = client.workoutPlan
+          ? `<div class="card-text">${client.workoutPlan}</div>`
+          : '<span class="empty-card">אלמוג טרם הוסיף מידע</span>';
+      }
+
+      // Rules card
+      document.getElementById('portalRulesContent').innerHTML = client.rules
+        ? `<div class="card-text">${client.rules}</div>`
+        : '<span class="empty-card">אלמוג טרם הוסיף מידע</span>';
+
+      // Measurements card + charts
+      renderPortalMeasurements(client);
+
+      document.getElementById('rewardsMsg').textContent = '';
+      renderRewards(client);
+
+      document.getElementById('portalScreen').style.display = 'flex';
+      refreshDailyLogs();
+    }
+
+    document.getElementById('checkinBtn').addEventListener('click', function () {
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === currentClientEmail);
+      if (idx === -1) return;
+      clients[idx].lastCheckIn = todayStr();
+      clients[idx].streak = (clients[idx].streak || 0) + 1;
+      clients[idx].points = (clients[idx].points || 0) + 50;
+      addToLedger(clients[idx].id, 'checkin', 50, "צ'ק אין יומי");
+      const streak = clients[idx].streak;
+      let bonusMsg = '';
+      const streakMilestones = { 7: 100, 14: 200, 21: 300, 30: 500 };
+      if (streakMilestones[streak]) {
+        const bonus = streakMilestones[streak];
+        clients[idx].points += bonus;
+        addToLedger(clients[idx].id, 'bonus', bonus, `בונוס סטריק ${streak} ימים 🔥`);
+        bonusMsg = ` +${bonus} בונוס ${streak} ימים 🔥`;
+      }
+      saveClients(clients);
+      const checkins = JSON.parse(localStorage.getItem('checkins') || '[]');
+      checkins.push({ clientId: clients[idx].id, date: todayStr() });
+      localStorage.setItem('checkins', JSON.stringify(checkins));
+      this.disabled = true;
+      document.getElementById('portalStreak').textContent = streak;
+      document.getElementById('portalPoints').textContent = clients[idx].points;
+      document.getElementById('checkinMsg').textContent = 'כל הכבוד! +50 נקודות' + bonusMsg;
+
+      renderRewards(clients[idx]);
+      // Check-in celebration
+      const celebEl = document.getElementById('checkinCelebration');
+      const confettiEl = document.getElementById('confettiWrap');
+      document.getElementById('celebStreakNum').textContent = streak;
+      document.getElementById('celebName').textContent = 'כל הכבוד ' + clients[idx].name + '!';
+      confettiEl.innerHTML = '';
+      const cColors = ['#c8ff00','#ff6b6b','#4ecdc4','#ffd166','#ffffff'];
+      for (let ci = 0; ci < 40; ci++) {
+        const dot = document.createElement('div');
+        dot.className = 'confetti-dot';
+        dot.style.left = (Math.random() * 100) + '%';
+        dot.style.background = cColors[Math.floor(Math.random() * cColors.length)];
+        dot.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+        dot.style.animationDelay = (Math.random() * 0.8) + 's';
+        confettiEl.appendChild(dot);
+      }
+      celebEl.classList.add('show');
+      setTimeout(() => celebEl.classList.remove('show'), 2500);
+    });
+
+    let selectedWorkoutTypes = [];
+
+    document.getElementById('workoutTypeGrid').addEventListener('click', function (e) {
+      const btn = e.target.closest('.workout-type-btn');
+      if (!btn) return;
+      const t = btn.dataset.type;
+      if (btn.classList.contains('selected')) {
+        btn.classList.remove('selected');
+        selectedWorkoutTypes = selectedWorkoutTypes.filter(x => x !== t);
+      } else {
+        btn.classList.add('selected');
+        selectedWorkoutTypes.push(t);
+      }
+      document.getElementById('workoutNotesWrap').style.display = selectedWorkoutTypes.length ? 'flex' : 'none';
+      document.getElementById('workoutMsg').textContent = '';
+    });
+
+    document.getElementById('workoutSubmit').addEventListener('click', function () {
+      if (!selectedWorkoutTypes.length) { document.getElementById('workoutMsg').textContent = 'יש לבחור סוג אימון'; return; }
+      const notes = document.getElementById('workoutNotes').value.trim();
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === currentClientEmail);
+      if (idx === -1) return;
+      const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+      workouts.push({ clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes });
+      localStorage.setItem('workouts', JSON.stringify(workouts));
+      clients[idx].points = (clients[idx].points || 0) + 100;
+      addToLedger(clients[idx].id, 'workout', 100, 'תיעוד אימון');
+      saveClients(clients);
+      document.getElementById('portalPoints').textContent = clients[idx].points;
+      document.getElementById('workoutMsg').textContent = '+100 נקודות';
+      // Workout celebration
+      const wCelebEl = document.getElementById('workoutCelebration');
+      document.getElementById('wCelebName').textContent = 'כל הכבוד ' + clients[idx].name + '!';
+      document.getElementById('wCelebType').textContent = selectedWorkoutTypes.join(' + ');
+      wCelebEl.classList.add('show');
+      setTimeout(() => wCelebEl.classList.remove('show'), 1500);
+      renderRewards(clients[idx]);
+      document.querySelectorAll('.workout-type-btn').forEach(b => b.classList.remove('selected'));
+      selectedWorkoutTypes = [];
+      document.getElementById('workoutNotes').value = '';
+      document.getElementById('workoutNotesWrap').style.display = 'none';
+    });
+
+    document.getElementById('nutritionSubmit').addEventListener('click', function () {
+      const calories = document.getElementById('nutritionCalories').value;
+      const protein = document.getElementById('nutritionProtein').value;
+      const carbs = document.getElementById('nutritionCarbs').value;
+      const fat = document.getElementById('nutritionFat').value;
+      if (!calories) { document.getElementById('nutritionMsg').textContent = 'יש להזין קלוריות'; return; }
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === currentClientEmail);
+      if (idx === -1) return;
+      const nutrition = JSON.parse(localStorage.getItem('nutrition') || '[]');
+      nutrition.push({ clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat });
+      localStorage.setItem('nutrition', JSON.stringify(nutrition));
+      clients[idx].points = (clients[idx].points || 0) + 75;
+      addToLedger(clients[idx].id, 'nutrition', 75, 'תיעוד תזונה');
+      saveClients(clients);
+      document.getElementById('portalPoints').textContent = clients[idx].points;
+      document.getElementById('nutritionMsg').textContent = '+75 נקודות';
+      renderRewards(clients[idx]);
+      document.getElementById('nutritionCalories').value = '';
+      document.getElementById('nutritionProtein').value = '';
+      document.getElementById('nutritionCarbs').value = '';
+      document.getElementById('nutritionFat').value = '';
+    });
+
+    // ---- Water / Sleep logging ----
+    function refreshDailyLogs() {
+      const today = todayStr();
+      const clients = getClients();
+      const client = clients.find(c => c.email === currentClientEmail);
+      if (!client) return;
+
+      const waterLog = JSON.parse(localStorage.getItem('waterLog') || '[]');
+      const todayWater = waterLog.find(e => e.clientId === client.id && e.date === today);
+      if (todayWater) {
+        document.getElementById('waterLoggedVal').textContent = todayWater.liters + ' ליטר 💧';
+        document.getElementById('waterLoggedDisplay').style.display = 'flex';
+        document.getElementById('waterInputWrap').style.display = 'none';
+      } else {
+        document.getElementById('waterLoggedDisplay').style.display = 'none';
+        document.getElementById('waterInputWrap').style.display = 'flex';
+      }
+
+      const sleepLog = JSON.parse(localStorage.getItem('sleepLog') || '[]');
+      const todaySleep = sleepLog.find(e => e.clientId === client.id && e.date === today);
+      if (todaySleep) {
+        document.getElementById('sleepLoggedVal').textContent = todaySleep.hours + ' שעות 😴';
+        document.getElementById('sleepLoggedDisplay').style.display = 'flex';
+        document.getElementById('sleepInputWrap').style.display = 'none';
+      } else {
+        document.getElementById('sleepLoggedDisplay').style.display = 'none';
+        document.getElementById('sleepInputWrap').style.display = 'flex';
+      }
+    }
+
+    document.getElementById('waterSubmit').addEventListener('click', function() {
+      const val = parseFloat(document.getElementById('waterInput').value);
+      if (isNaN(val)) { document.getElementById('waterMsg').textContent = 'יש להזין כמות'; return; }
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === currentClientEmail);
+      if (idx === -1) return;
+      const log = JSON.parse(localStorage.getItem('waterLog') || '[]');
+      const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
+      const entry = { clientId: clients[idx].id, date: todayStr(), liters: val };
+      const isNew = existing < 0;
+      if (existing >= 0) log[existing] = entry; else log.push(entry);
+      localStorage.setItem('waterLog', JSON.stringify(log));
+      if (isNew) {
+        clients[idx].points = (clients[idx].points || 0) + 20;
+        addToLedger(clients[idx].id, 'water', 20, 'תיעוד מים');
+      }
+      saveClients(clients);
+      document.getElementById('portalPoints').textContent = clients[idx].points;
+      document.getElementById('waterMsg').textContent = isNew ? '+20 נקודות 💧' : 'עודכן ✓';
+      document.getElementById('waterInput').value = '';
+      renderRewards(clients[idx]);
+      refreshDailyLogs();
+    });
+
+    document.getElementById('waterEditBtn').addEventListener('click', function() {
+      document.getElementById('waterLoggedDisplay').style.display = 'none';
+      document.getElementById('waterInputWrap').style.display = 'flex';
+      document.getElementById('waterInputWrap').style.flexDirection = 'column';
+    });
+
+    document.getElementById('sleepSubmit').addEventListener('click', function() {
+      const val = parseFloat(document.getElementById('sleepInput').value);
+      if (isNaN(val)) { document.getElementById('sleepMsg').textContent = 'יש להזין כמות'; return; }
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === currentClientEmail);
+      if (idx === -1) return;
+      const log = JSON.parse(localStorage.getItem('sleepLog') || '[]');
+      const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
+      const entry = { clientId: clients[idx].id, date: todayStr(), hours: val };
+      const isNew = existing < 0;
+      if (existing >= 0) log[existing] = entry; else log.push(entry);
+      localStorage.setItem('sleepLog', JSON.stringify(log));
+      if (isNew) {
+        clients[idx].points = (clients[idx].points || 0) + 20;
+        addToLedger(clients[idx].id, 'sleep', 20, 'תיעוד שינה');
+      }
+      saveClients(clients);
+      document.getElementById('portalPoints').textContent = clients[idx].points;
+      document.getElementById('sleepMsg').textContent = isNew ? '+20 נקודות 😴' : 'עודכן ✓';
+      document.getElementById('sleepInput').value = '';
+      renderRewards(clients[idx]);
+      refreshDailyLogs();
+    });
+
+    document.getElementById('sleepEditBtn').addEventListener('click', function() {
+      document.getElementById('sleepLoggedDisplay').style.display = 'none';
+      document.getElementById('sleepInputWrap').style.display = 'flex';
+      document.getElementById('sleepInputWrap').style.flexDirection = 'column';
+    });
+
+    function renderRewards(client) {
+      const pts = client.points || 0;
+      document.getElementById('rewardsBalance').textContent = pts.toLocaleString() + ' נקודות';
+      const thresholds = [3000, 8500, 12000];
+      const nextT = thresholds.find(t => t > pts) || thresholds[thresholds.length - 1];
+      const prevT = thresholds.slice().reverse().find(t => t <= pts) || 0;
+      const fillPct = nextT === prevT ? 100 : Math.min(100, Math.round(((pts - prevT) / (nextT - prevT)) * 100));
+      const fillEl = document.getElementById('rewardProgressFill');
+      const labelEl = document.getElementById('rewardProgressLabel');
+      if (fillEl) fillEl.style.width = fillPct + '%';
+      if (labelEl) labelEl.textContent = pts.toLocaleString() + ' / ' + nextT.toLocaleString() + ' לפרס הבא';
+      const canAfford = r => pts >= r.cost;
+      document.getElementById('rewardsCatalog').innerHTML = REWARDS.map(r => `
+        <div style="background:#141414;border-left:3px solid #c8ff00;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;${canAfford(r)?'':'opacity:0.4;'}">
+          <div style="font-weight:700;font-size:15px;color:#fff;">${r.label}</div>
+          <div style="font-size:13px;color:#888;">${r.desc}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;color:#c8ff00;font-weight:600;">${r.cost.toLocaleString()} נקודות</span>
+            <button class="btn-redeem" data-id="${r.id}" data-cost="${r.cost}" data-label="${r.label}" ${canAfford(r)?'':'disabled'} style="${canAfford(r)?'background:#c8ff00;color:#000;':'background:#2a2a2a;color:#555;'}width:auto;padding:8px 16px;font-size:13px;font-weight:700;border-radius:8px;border:none;cursor:${canAfford(r)?'pointer':'default'};">מימוש</button>
+          </div>
+        </div>`).join('');
+      document.getElementById('rewardsCatalog').querySelectorAll('.btn-redeem:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const cost = Number(this.dataset.cost);
+          const clients = getClients();
+          const idx = clients.findIndex(c => c.email === currentClientEmail);
+          if (idx === -1 || clients[idx].points < cost) return;
+          clients[idx].points -= cost;
+          addToLedger(clients[idx].id, 'redeem', -cost, this.dataset.label);
+          saveClients(clients);
+          const redemptions = JSON.parse(localStorage.getItem('redemptions') || '[]');
+          redemptions.push({ clientId: clients[idx].id, clientName: clients[idx].name, reward: this.dataset.label, date: todayStr(), status: 'pending' });
+          localStorage.setItem('redemptions', JSON.stringify(redemptions));
+          document.getElementById('portalPoints').textContent = clients[idx].points;
+          document.getElementById('rewardsMsg').textContent = 'הבקשה נשלחה! 🎉';
+          renderRewards(clients[idx]);
+        });
+      });
+    }
+
+    function renderRedemptions() {
+      const queue = document.getElementById('redemptionsQueue');
+      const clients = getClients();
+      const redemptions = JSON.parse(localStorage.getItem('redemptions') || '[]');
+      const pending = redemptions.map((r, i) => ({ ...r, _idx: i })).filter(r => r.status === 'pending');
+      if (pending.length === 0) {
+        queue.innerHTML = '<p class="empty-state">אין בקשות ממתינות</p>';
+        return;
+      }
+      queue.innerHTML = pending.map(r => `
+        <div class="redemption-item" data-idx="${r._idx}">
+          <div style="font-weight:bold;">${r.clientName}</div>
+          <div>${r.reward}</div>
+          <div class="redemption-meta">${r.date}</div>
+          <button class="btn-done" data-idx="${r._idx}">בוצע ✓</button>
+        </div>`).join('');
+      queue.querySelectorAll('.btn-done').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const redemptions2 = JSON.parse(localStorage.getItem('redemptions') || '[]');
+          redemptions2[Number(this.dataset.idx)].status = 'completed';
+          localStorage.setItem('redemptions', JSON.stringify(redemptions2));
+          renderRedemptions();
+        });
+      });
+    }
+
+    document.getElementById('goalChiturChange').addEventListener('click', function () {
+      selectedGoalChange = 'חיטוב';
+      this.classList.add('selected');
+      document.getElementById('goalMasaChange').classList.remove('selected');
+    });
+
+    document.getElementById('goalMasaChange').addEventListener('click', function () {
+      selectedGoalChange = 'מסה';
+      this.classList.add('selected');
+      document.getElementById('goalChiturChange').classList.remove('selected');
+    });
+
+    document.getElementById('changeGoalBtn').addEventListener('click', function () {
+      document.getElementById('portalScreen').style.display = 'none';
+      selectedGoalChange = null;
+      document.getElementById('goalChiturChange').classList.remove('selected');
+      document.getElementById('goalMasaChange').classList.remove('selected');
+      document.getElementById('clientFileChange').value = '';
+      document.getElementById('changeGoalMessage').textContent = '';
+      document.getElementById('changeGoalScreen').style.display = 'flex';
+    });
+
+    document.getElementById('changeGoalCancel').addEventListener('click', function () {
+      document.getElementById('changeGoalScreen').style.display = 'none';
+      document.getElementById('portalScreen').style.display = 'flex';
+    });
+
+    document.getElementById('changeGoalSubmit').addEventListener('click', function () {
+      const msg = document.getElementById('changeGoalMessage');
+      if (!selectedGoalChange) { msg.textContent = 'יש לבחור מטרה'; return; }
+      const fileInput = document.getElementById('clientFileChange');
+      const filename = fileInput.files.length > 0 ? fileInput.files[0].name : null;
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === currentClientEmail);
+      if (idx !== -1) {
+        clients[idx].goal = selectedGoalChange;
+        if (filename) clients[idx].filename = filename;
+        saveClients(clients);
+        showPortal(clients[idx]);
+      }
+    });
+
+    function showOnboarding(client) {
+      currentClientEmail = client.email;
+      hideAllScreens();
+      document.getElementById('onboardingGreeting').textContent = 'שלום ' + client.name;
+      document.getElementById('onboardingScreen').style.display = 'flex';
+    }
+
+    document.getElementById('onboardingSubmit').addEventListener('click', function () {
+      const msg = document.getElementById('onboardingMessage');
+      if (!selectedGoal) { msg.textContent = 'יש לבחור מטרה'; return; }
+      const fileInput = document.getElementById('clientFile');
+      const filename = fileInput.files.length > 0 ? fileInput.files[0].name : null;
+      const email = document.getElementById('emailInput').value.trim();
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === email);
+      if (idx !== -1) {
+        clients[idx].goal = selectedGoal;
+        clients[idx].filename = filename;
+        clients[idx].onboarded = true;
+        saveClients(clients);
+      }
+      const clients2 = getClients();
+      showPortal(clients2[clients2.findIndex(c => c.email === currentClientEmail)]);
+    });
+
+    function getClients() {
+      return JSON.parse(localStorage.getItem('clients') || '[]');
+    }
+
+    function saveClients(clients) {
+      localStorage.setItem('clients', JSON.stringify(clients));
+    }
+
+    function renderClientList() {
+      const clients = getClients();
+      // Client cards
+      const list = document.getElementById('clientList');
+      if (clients.length === 0) {
+        list.innerHTML = '<p style="color:#888">אין לקוחות עדיין</p>';
+        return;
+      }
+
+      list.innerHTML = clients.map(c => {
+        const daysSinceCheckin = c.lastCheckIn
+          ? Math.floor((Date.now() - new Date(c.lastCheckIn).getTime()) / 864e5)
+          : (c.joinedAt ? Math.floor((Date.now() - new Date(c.joinedAt).getTime()) / 864e5) : 999);
+        const inactive = daysSinceCheckin >= 3;
+        const lastCheckinLabel = c.lastCheckIn ? c.lastCheckIn : 'אף פעם';
+        return `
+          <div class="client-row" data-name="${c.name}" data-id="${c.id}">
+            <button class="btn-remove" data-id="${c.id}">הסר</button>
+            <div class="client-name">${c.name}</div>
+            <div class="client-meta">
+              <span class="goal-badge" style="font-size:0.75rem; padding:2px 8px;">${c.goal || '—'}</span>
+              <span>🔥 ${c.streak || 0}</span>
+              <span>צ׳ק אין: ${lastCheckinLabel}</span>
+            </div>
+            ${inactive ? '<div class="inactive-warn">לא פעיל 3+ ימים</div>' : ''}
+          </div>`;
+      }).join('');
+
+      list.querySelectorAll('.client-row').forEach(row => {
+        row.addEventListener('click', function (e) {
+          if (e.target.classList.contains('btn-remove')) return;
+          showClientDeepView(Number(this.dataset.id));
+        });
+      });
+
+      list.querySelectorAll('.btn-remove').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (!confirm('האם אתה בטוח?')) return;
+          const id = Number(this.dataset.id);
+          saveClients(getClients().filter(c => c.id !== id));
+          renderClientList();
+        });
+      });
+    }
+
+    let currentDeepViewClientId = null;
+
+    function switchDvStep(to) {
+      document.querySelectorAll('.dv-step').forEach(s => { s.style.display = 'none'; });
+      document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active'));
+      const stepEl = document.getElementById('dvStep' + to);
+      const dotEl = document.querySelector(`[data-step="${to}"].step-dot`);
+      if (stepEl) stepEl.style.display = 'flex';
+      if (dotEl) dotEl.classList.add('active');
+    }
+
+    function showClientDeepView(clientId) {
+      currentDeepViewClientId = clientId;
+      const client = getClients().find(c => c.id === clientId);
+      if (!client) return;
+      switchDvStep(1);
+
+      document.getElementById('dvName').textContent = client.name;
+      document.getElementById('dvEmail').textContent = client.email;
+      document.getElementById('dvGoalBadge').textContent = client.goal || '—';
+      document.getElementById('dvStreak').textContent = client.streak || 0;
+      document.getElementById('dvPoints').textContent = client.points || 0;
+
+      // Check-in history
+      const checkins = JSON.parse(localStorage.getItem('checkins') || '[]')
+        .filter(c => c.clientId === clientId).reverse();
+      const dvCheckins = document.getElementById('dvCheckins');
+      dvCheckins.innerHTML = checkins.length
+        ? checkins.map(c => `<div class="history-item">${c.date}</div>`).join('')
+        : '<p class="empty-state">אין צ\'ק אינים עדיין</p>';
+
+      // Workout history
+      const workouts = JSON.parse(localStorage.getItem('workouts') || '[]')
+        .filter(w => w.clientId === clientId).reverse();
+      const dvWorkouts = document.getElementById('dvWorkouts');
+      dvWorkouts.innerHTML = workouts.length
+        ? workouts.map(w => { const typeStr = Array.isArray(w.type) ? w.type.join(' + ') : (w.type || w.exercise || '—'); return `<div class="history-item"><strong>${typeStr}</strong><span style="color:#888888;font-size:0.8rem;margin-right:8px;">${w.date}</span>${w.notes ? `<div style="color:#aaa;margin-top:4px;">${w.notes}</div>` : ''}</div>`; }).join('')
+        : '<p class="empty-state">אין אימונים עדיין</p>';
+
+      // Nutrition history
+      const nutrition = JSON.parse(localStorage.getItem('nutrition') || '[]')
+        .filter(n => n.clientId === clientId).reverse();
+      const dvNutrition = document.getElementById('dvNutrition');
+      dvNutrition.innerHTML = nutrition.length
+        ? nutrition.map(n => `<div class="history-item">${n.date} — ${n.calories} קל׳ | חלבון ${n.protein}ג׳ | פחמימות ${n.carbs}ג׳ | שומן ${n.fat}ג׳</div>`).join('')
+        : '<p class="empty-state">אין תזונה עדיין</p>';
+
+      // Water log history
+      const waterLog = JSON.parse(localStorage.getItem('waterLog') || '[]').filter(e => e.clientId === clientId).reverse();
+      document.getElementById('dvWaterLog').innerHTML = waterLog.length
+        ? waterLog.map(e => `<div class="history-item">${e.date} — ${e.liters} ליטר</div>`).join('')
+        : '<p class="empty-state">אין היסטוריית מים</p>';
+
+      // Steps log history
+      const stepsLog = JSON.parse(localStorage.getItem('stepsLog') || '[]').filter(e => e.clientId === clientId).reverse();
+      document.getElementById('dvStepsLog').innerHTML = stepsLog.length
+        ? stepsLog.map(e => `<div class="history-item">${e.date} — ${Number(e.steps).toLocaleString()} צעדים</div>`).join('')
+        : '<p class="empty-state">אין היסטוריית צעדים</p>';
+
+      // Sleep log history
+      const sleepLog = JSON.parse(localStorage.getItem('sleepLog') || '[]').filter(e => e.clientId === clientId).reverse();
+      document.getElementById('dvSleepLog').innerHTML = sleepLog.length
+        ? sleepLog.map(e => `<div class="history-item">${e.date} — ${e.hours} שעות</div>`).join('')
+        : '<p class="empty-state">אין היסטוריית שינה</p>';
+
+      // Notes
+      renderDvNotes(clientId);
+
+      // Populate structured fields
+      const st = client.stats || {};
+      document.getElementById('dvHeight').value = st.height || '';
+      document.getElementById('dvWeight').value = st.weight || '';
+      document.getElementById('dvBelly').value = st.belly || '';
+      document.getElementById('dvNeck').value = st.neck || '';
+      document.getElementById('dvFatPct').value = st.fatPct || '';
+      document.getElementById('dvRmr').value = st.rmr || '';
+      document.getElementById('dvCalorieBurn').value = st.calorieBurn || '';
+      document.getElementById('dvCalorieMin').value = st.calorieMin || '';
+      document.getElementById('dvCalorieMax').value = st.calorieMax || '';
+      document.getElementById('dvProteinTarget').value = st.proteinTarget || '';
+      document.getElementById('dvBmi').value = st.bmi || '';
+      const dvNLbl = document.getElementById('dvNutritionFileLabel');
+      if (dvNLbl) { dvNLbl.textContent = client.nutritionPlanFileName ? '✅ ' + client.nutritionPlanFileName : '📁 העלא תפריט שבועי (Word)'; dvNLbl.style.color = client.nutritionPlanFileName ? '#c8ff00' : '#888'; }
+      const dvWLbl = document.getElementById('dvWorkoutFileLabel');
+      if (dvWLbl) { dvWLbl.textContent = client.workoutPlanFileName ? '✅ ' + client.workoutPlanFileName : '📁 העלא תוכנית אימונים (Excel)'; dvWLbl.style.color = client.workoutPlanFileName ? '#c8ff00' : '#888'; }
+      document.getElementById('dvRules').value = client.rules || '';
+      // Render tracking history
+      renderDvTracking(clientId);
+
+      // Clear form fields and messages
+      ['dvMenuMsg','dvWorkoutPlanMsg','dvRulesMsg','dvStatsMsg','dvPointsMsg'].forEach(id => document.getElementById(id).textContent = '');
+      document.getElementById('dvPointsAmount').value = '';
+      document.getElementById('dvPointsReason').value = '';
+      document.getElementById('dvTrackDate').value = todayStr();
+      ['dvTrackFat','dvTrackWeight','dvTrackBelly','dvTrackArm','dvTrackNeck','dvTrackRmr','dvTrackBmi'].forEach(id => document.getElementById(id).value = '');
+
+      hideAllScreens();
+      document.getElementById('clientDeepView').style.display = 'flex';
+    }
+
+    function renderDvNotes(clientId) {
+      const notes = JSON.parse(localStorage.getItem('notes') || '[]')
+        .filter(n => n.clientId === clientId).reverse();
+      document.getElementById('dvNotesList').innerHTML = notes.length
+        ? notes.map(n => `<div class="note-item"><div class="note-date">${n.createdAt.slice(0,10)}</div>${n.content}</div>`).join('')
+        : '<p class="empty-state">אין הערות עדיין</p>';
+    }
+
+
+
+    document.getElementById('dvNoteBtn').addEventListener('click', function () {
+      const content = document.getElementById('dvNoteInput').value.trim();
+      if (!content) return;
+      const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+      notes.push({ clientId: currentDeepViewClientId, content, createdAt: new Date().toISOString() });
+      localStorage.setItem('notes', JSON.stringify(notes));
+      document.getElementById('dvNoteInput').value = '';
+      renderDvNotes(currentDeepViewClientId);
+    });
+
+    document.getElementById('dvPointsBtn').addEventListener('click', function () {
+      const amount = parseInt(document.getElementById('dvPointsAmount').value);
+      const reason = document.getElementById('dvPointsReason').value.trim();
+      if (!amount || amount < 1) { document.getElementById('dvPointsMsg').textContent = 'יש להזין כמות'; return; }
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
+      if (idx === -1) return;
+      clients[idx].points = (clients[idx].points || 0) + amount;
+      saveClients(clients);
+      const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
+      ledger.push({ clientId: currentDeepViewClientId, amount, reason, grantedAt: new Date().toISOString() });
+      localStorage.setItem('pointsLedger', JSON.stringify(ledger));
+      document.getElementById('dvPoints').textContent = clients[idx].points;
+      document.getElementById('dvPointsAmount').value = '';
+      document.getElementById('dvPointsReason').value = '';
+      document.getElementById('dvPointsMsg').textContent = `+${amount} נקודות הוענקו`;
+    });
+
+    let portalWeightChart = null, portalFatChart = null;
+    let dvWeightChart = null, dvFatChart = null;
+
+    function buildChartConfig(labels, data) {
+      return {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            borderColor: '#c8ff00',
+            backgroundColor: 'transparent',
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#c8ff00',
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#fff', font: { size: 11 } } },
+            y: { grid: { display: false }, ticks: { color: '#fff', font: { size: 11 } } }
+          }
+        }
+      };
+    }
+
+    function renderMeasureCharts(meas, weightCanvasId, fatCanvasId, wChartRef, fChartRef) {
+      const sorted = [...meas].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      const labels = sorted.map(m => m.date || '');
+      const weights = sorted.map(m => m.weight ? parseFloat(m.weight) : null);
+      const fats = sorted.map(m => m.fatPct ? parseFloat(m.fatPct) : null);
+      const wCtx = document.getElementById(weightCanvasId);
+      const fCtx = document.getElementById(fatCanvasId);
+      if (wCtx) {
+        if (wChartRef.chart) wChartRef.chart.destroy();
+        wChartRef.chart = new Chart(wCtx, buildChartConfig(labels, weights));
+      }
+      if (fCtx) {
+        if (fChartRef.chart) fChartRef.chart.destroy();
+        fChartRef.chart = new Chart(fCtx, buildChartConfig(labels, fats));
+      }
+    }
+
+    const portalWRef = {}, portalFRef = {};
+    const dvWRef = {}, dvFRef = {};
+
+    function renderPortalMeasurements(client) {
+      const meas = client.measurements || [];
+      const el = document.getElementById('portalMeasurementsContent');
+      if (meas.length) {
+        const rows = meas.map((m, i) => ({ m, i })).reverse()
+          .map(({ m, i }) => `<tr><td>${m.date||''}</td><td>${m.weight||'—'}</td><td>${m.fatPct||'—'}</td><td>${m.belly||'—'}</td><td>${m.arm||'—'}</td><td><button class="btn-del-meas-portal" data-idx="${i}" style="background:transparent;border:none;color:#ff4444;cursor:pointer;width:auto;padding:2px 6px;font-size:14px;">🗑</button></td></tr>`).join('');
+        el.innerHTML = `<div style="overflow-x:auto;"><table class="measure-table"><thead><tr><th>תאריך</th><th>משקל</th><th>שומן%</th><th>בטן</th><th>יד</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      } else {
+        el.innerHTML = '<span class="empty-card">אלמוג טרם הוסיף מידע</span>';
+      }
+      renderMeasureCharts(meas, 'portalWeightChart', 'portalFatChart', portalWRef, portalFRef);
+    }
+
+    function downloadPlanFile(clientId, type) {
+      const client = getClients().find(c => String(c.id) === String(clientId));
+      if (!client) return;
+      const isWorkout = type === 'workout';
+      const fileData = isWorkout ? client.workoutPlanFile : client.nutritionPlanFile;
+      if (!fileData) return;
+      const fileName = (isWorkout ? client.workoutPlanFileName : client.nutritionPlanFileName)
+                       || (isWorkout ? 'workout.xlsx' : 'nutrition.docx');
+      const a = document.createElement('a');
+      a.href = typeof fileData === 'object' ? fileData.data : fileData;
+      a.download = typeof fileData === 'object' ? (fileData.filename || fileName) : fileName;
+      a.click();
+    }
+
+    function renderDvTracking(clientId) {
+      const client = getClients().find(c => c.id === clientId);
+      const meas = (client && client.measurements) || [];
+      const el = document.getElementById('dvTrackHistory');
+      if (meas.length) {
+        const rows = meas.map((m, i) => ({ m, i })).reverse()
+          .map(({ m, i }) => `<tr><td>${m.date||''}</td><td>${m.weight||'—'}</td><td>${m.fatPct||'—'}</td><td>${m.belly||'—'}</td><td>${m.arm||'—'}</td><td>${m.neck||'—'}</td><td>${m.rmr||'—'}</td><td>${m.bmi||'—'}</td><td><button class="btn-del-meas-dv" data-idx="${i}" style="background:transparent;border:none;color:#ff4444;cursor:pointer;width:auto;padding:2px 6px;font-size:14px;">🗑</button></td></tr>`).join('');
+        el.innerHTML = `<div style="overflow-x:auto;"><table class="measure-table"><thead><tr><th>תאריך</th><th>משקל</th><th>שומן%</th><th>בטן</th><th>יד</th><th>צוואר</th><th>RMR</th><th>BMI</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      } else {
+        el.innerHTML = '<p class="empty-state">אין מדידות עדיין</p>';
+      }
+      renderMeasureCharts(meas, 'dvWeightChart', 'dvFatChart', dvWRef, dvFRef);
+    }
+
+    function handleDvNutritionFile(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const lbl = document.getElementById('dvNutritionFileLabel');
+      if (lbl) { lbl.textContent = '✅ ' + file.name; lbl.style.color = '#c8ff00'; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const clients = getClients();
+        const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
+        if (idx === -1) return;
+        clients[idx].nutritionPlanFile = e.target.result;
+        clients[idx].nutritionPlanFileName = file.name;
+        saveClients(clients);
+        const msg = document.getElementById('dvMenuMsg');
+        if (msg) msg.textContent = 'נשמר ✓';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleDvWorkoutFile(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const lbl = document.getElementById('dvWorkoutFileLabel');
+      if (lbl) { lbl.textContent = '✅ ' + file.name; lbl.style.color = '#c8ff00'; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const clients = getClients();
+        const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
+        if (idx === -1) return;
+        clients[idx].workoutPlanFile = e.target.result;
+        clients[idx].workoutPlanFileName = file.name;
+        saveClients(clients);
+        const msg = document.getElementById('dvWorkoutPlanMsg');
+        if (msg) msg.textContent = 'נשמר ✓';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function dvSaveField(field, value, msgId) {
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
+      if (idx === -1) return;
+      clients[idx][field] = value;
+      saveClients(clients);
+      document.getElementById(msgId).textContent = 'נשמר ✓';
+    }
+
+    document.getElementById('dvStatsSaveBtn').addEventListener('click', function () {
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
+      if (idx === -1) return;
+      clients[idx].stats = {
+        height: document.getElementById('dvHeight').value,
+        weight: document.getElementById('dvWeight').value,
+        belly: document.getElementById('dvBelly').value,
+        neck: document.getElementById('dvNeck').value,
+        fatPct: document.getElementById('dvFatPct').value,
+        rmr: document.getElementById('dvRmr').value,
+        calorieBurn: document.getElementById('dvCalorieBurn').value,
+        calorieMin: document.getElementById('dvCalorieMin').value,
+        calorieMax: document.getElementById('dvCalorieMax').value,
+        proteinTarget: document.getElementById('dvProteinTarget').value,
+        bmi: document.getElementById('dvBmi').value,
+      };
+      saveClients(clients);
+      document.getElementById('dvStatsMsg').textContent = 'נשמר ✓';
+    });
+
+
+    document.getElementById('dvRulesSaveBtn').addEventListener('click', function () {
+      dvSaveField('rules', document.getElementById('dvRules').value, 'dvRulesMsg');
+    });
+
+    document.getElementById('dvTrackAddBtn').addEventListener('click', function () {
+      const entry = {
+        date: document.getElementById('dvTrackDate').value || todayStr(),
+        fatPct: document.getElementById('dvTrackFat').value,
+        weight: document.getElementById('dvTrackWeight').value,
+        belly: document.getElementById('dvTrackBelly').value,
+        arm: document.getElementById('dvTrackArm').value,
+        neck: document.getElementById('dvTrackNeck').value,
+        rmr: document.getElementById('dvTrackRmr').value,
+        bmi: document.getElementById('dvTrackBmi').value,
+      };
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
+      if (idx === -1) return;
+      clients[idx].measurements = clients[idx].measurements || [];
+      clients[idx].measurements.push(entry);
+      saveClients(clients);
+      ['dvTrackFat','dvTrackWeight','dvTrackBelly','dvTrackArm','dvTrackNeck','dvTrackRmr','dvTrackBmi'].forEach(id => document.getElementById(id).value = '');
+      renderDvTracking(currentDeepViewClientId);
+    });
+
+    // Delete measurement from admin deep view
+    document.getElementById('dvTrackHistory').addEventListener('click', function(e) {
+      const btn = e.target.closest('.btn-del-meas-dv');
+      if (!btn) return;
+      if (!confirm('האם למחוק את המדידה?')) return;
+      const idx = parseInt(btn.dataset.idx);
+      const clients = getClients();
+      const ci = clients.findIndex(c => c.id === currentDeepViewClientId);
+      if (ci === -1) return;
+      clients[ci].measurements = clients[ci].measurements || [];
+      clients[ci].measurements.splice(idx, 1);
+      saveClients(clients);
+      renderDvTracking(currentDeepViewClientId);
+    });
+
+    document.getElementById('dvBackBtn').addEventListener('click', function () {
+      hideAllScreens();
+      document.getElementById('adminPanel').style.display = 'flex';
+    });
+
+    function showAdminPanel() {
+      hideAllScreens();
+      document.getElementById('adminPanel').style.display = 'flex';
+      document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.admin-tab-content').forEach(t => { t.style.display = 'none'; });
+      const dashBtn = document.querySelector('.admin-tab-btn[data-tab="dashboard"]');
+      const dashTab = document.getElementById('adminTab-dashboard');
+      if (dashBtn) dashBtn.classList.add('active');
+      if (dashTab) dashTab.style.display = 'flex';
+      renderRedemptions();
+      renderClientStatusCards();
+      renderClientList();
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', function () {
+      const msg = document.getElementById('message');
+      if (isAdmin) {
+        const pw = document.getElementById('passwordInput').value;
+        if (pw === '@lmog101') {
+          showAdminPanel();
+        } else {
+          msg.textContent = 'סיסמא שגויה';
+        }
+      } else {
+        const email = document.getElementById('emailInput').value.trim();
+        const clients = getClients();
+        const client = clients.find(c => c.email === email);
+        if (client) {
+          if (!client.onboarded) {
+            showOnboarding(client);
+          } else {
+            currentClientEmail = client.email;
+            showPortal(client);
+          }
+        } else {
+          msg.textContent = 'לא רשום, צור קשר עם אלמוג';
+        }
+      }
+    });
+
+    let addFormSelectedGoal = null;
+    let addPendingMeasurements = [];
+    let addPhotoData = null;
+
+    function switchAddStep(to) {
+      document.querySelectorAll('.add-form-step').forEach(s => { s.style.display = 'none'; });
+      document.querySelectorAll('.add-step-dot').forEach(d => {
+        d.classList.remove('active', 'done');
+        if (Number(d.dataset.step) < to) d.classList.add('done');
+        if (Number(d.dataset.step) === to) d.classList.add('active');
+      });
+      const stepEl = document.getElementById('addFormStep' + to);
+      if (stepEl) stepEl.style.display = 'flex';
+      const labels = ['', 'שלב 1 מתוך 3 — פרטים אישיים', 'שלב 2 מתוך 3 — תוכנית', 'שלב 3 מתוך 3 — התקדמות חודשית'];
+      const lbl = document.getElementById('addStepLabel');
+      if (lbl) lbl.textContent = labels[to] || '';
+    }
+
+    function resetAddForm() {
+      addFormSelectedGoal = null;
+      addPendingMeasurements = [];
+      window._workoutPlanFile = null; window._workoutPlanFileName = null;
+      window._nutritionPlanFile = null; window._nutritionPlanFileName = null;
+      ['newName','newEmail'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      ['addPhone','addCalorieMin','addCalorieMax'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); addPhotoData = null;
+      ['workoutFileInput','nutritionFileInput'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      const wlbl = document.getElementById('workoutFileLabel'); if (wlbl) { wlbl.textContent = '📁 לחץ להעלאת קובץ Excel'; wlbl.style.color = '#888'; }
+      const nlbl = document.getElementById('nutritionFileLabel'); if (nlbl) { nlbl.textContent = '📁 לחץ להעלאת קובץ Word'; nlbl.style.color = '#888'; }
+      ['addTrackDate','addTrackWeight','addTrackFat','addTrackBelly','addTrackArm'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      document.querySelectorAll('.add-goal-card').forEach(b => b.classList.remove('selected'));
+      const hist = document.getElementById('addTrackHistory'); if (hist) hist.innerHTML = '';
+      const msg = document.getElementById('addMessage'); if (msg) msg.textContent = '';
+      switchAddStep(1);
+    }
+
+    document.querySelectorAll('.add-goal-card').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        addFormSelectedGoal = this.dataset.goal;
+        document.querySelectorAll('.add-goal-card').forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+      });
+    });
+
+    document.getElementById('addStep1Next').addEventListener('click', function() {
+      const name = document.getElementById('newName').value.trim();
+      const email = document.getElementById('newEmail').value.trim();
+      const msg = document.getElementById('addMessage');
+      if (!name) { msg.textContent = 'יש להזין שם'; return; }
+      if (!email) { msg.textContent = 'יש להזין אימייל'; return; }
+      msg.textContent = '';
+      switchAddStep(2);
+    });
+
+    document.getElementById('addStep2Back').addEventListener('click', function() { switchAddStep(1); });
+    document.getElementById('addStep2Next').addEventListener('click', function() { switchAddStep(3); });
+    document.getElementById('addStep3Back').addEventListener('click', function() { switchAddStep(2); });
+
+    document.getElementById('addTrackAddBtn').addEventListener('click', function() {
+      const date = document.getElementById('addTrackDate').value;
+      const weight = document.getElementById('addTrackWeight').value;
+      const fat = document.getElementById('addTrackFat').value;
+      const belly = document.getElementById('addTrackBelly').value;
+      const arm = document.getElementById('addTrackArm').value;
+      if (!date && !weight && !fat && !belly && !arm) return;
+      addPendingMeasurements.push({ date: date || todayStr(), weight, fatPct: fat, belly, arm });
+      const hist = document.getElementById('addTrackHistory');
+      hist.innerHTML = '<table class="measure-table"><thead><tr><th>תאריך</th><th>משקל</th><th>שומן%</th><th>בטן</th><th>יד</th></tr></thead><tbody>' +
+        addPendingMeasurements.map(m => `<tr><td>${m.date}</td><td>${m.weight||'—'}</td><td>${m.fatPct||'—'}</td><td>${m.belly||'—'}</td><td>${m.arm||'—'}</td></tr>`).join('') + '</tbody></table>';
+      ['addTrackDate','addTrackWeight','addTrackFat','addTrackBelly','addTrackArm'].forEach(id => { document.getElementById(id).value = ''; });
+    });
+    const addPhotoInput = document.getElementById('addPhoto');
+    if (addPhotoInput) {
+      addPhotoInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) { addPhotoData = null; return; }
+        const reader = new FileReader();
+        reader.onload = e => { addPhotoData = e.target.result; };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function handleWorkoutFile(input) {
+      const file = input.files[0];
+      if (!file) return;
+      document.getElementById('workoutFileLabel').textContent = '✅ ' + file.name;
+      document.getElementById('workoutFileLabel').style.color = '#c8ff00';
+      const reader = new FileReader();
+      reader.onload = e => { window._workoutPlanFile = e.target.result; window._workoutPlanFileName = file.name; };
+      reader.readAsDataURL(file);
+    }
+
+    function handleNutritionFile(input) {
+      const file = input.files[0];
+      if (!file) return;
+      document.getElementById('nutritionFileLabel').textContent = '✅ ' + file.name;
+      document.getElementById('nutritionFileLabel').style.color = '#c8ff00';
+      const reader = new FileReader();
+      reader.onload = e => { window._nutritionPlanFile = e.target.result; window._nutritionPlanFileName = file.name; };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById('addClientFinalBtn').addEventListener('click', function() {
+      const addMsg = document.getElementById('addMessage');
+      const name = document.getElementById('newName').value.trim();
+      const email = document.getElementById('newEmail').value.trim();
+      if (!name || !email) { addMsg.textContent = 'חסרים שם או אימייל — חזור לשלב 1'; return; }
+      const clients = getClients();
+      if (clients.some(c => c.email === email)) { addMsg.textContent = 'לקוח עם אימייל זה כבר קיים'; return; }
+      const phone = document.getElementById('addPhone').value.trim() || null;
+      const newClient = {
+        id: Date.now(), name, email,
+        goal: addFormSelectedGoal,
+        onboarded: true,
+        joinedAt: new Date().toISOString(),
+        streak: 0, lastCheckIn: null, points: 0,
+        phone: phone, photo: addPhotoData,
+        workoutPlanFile: window._workoutPlanFile || null,
+        workoutPlanFileName: window._workoutPlanFileName || null,
+        nutritionPlanFile: window._nutritionPlanFile || null,
+        nutritionPlanFileName: window._nutritionPlanFileName || null,
+        rules: null,
+        stats: {
+          calorieMin: document.getElementById('addCalorieMin').value || '',
+          calorieMax: document.getElementById('addCalorieMax').value || '',
+        },
+        measurements: [...addPendingMeasurements],
+      };
+      clients.push(newClient);
+      saveClients(clients);
+      addMsg.textContent = 'הלקוח נוסף בהצלחה! ✓';
+      addMsg.style.color = '#c8ff00';
+      renderClientList(); renderClientStatusCards();
+      setTimeout(() => {
+        const form = document.getElementById('addClientForm');
+        if (form) form.style.display = 'none';
+        const btn = document.getElementById('showAddClientBtn');
+        if (btn) btn.textContent = '+ הוסף לקוח';
+        resetAddForm();
+      }, 1400);
+    });
+
+    // ---- renderClientStatusCards ----
+    function renderClientStatusCards() {
+      const today = todayStr();
+      const clients = getClients();
+      const allWorkouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+
+      // DAU strip
+      const dauStrip = document.getElementById('dauStrip');
+      if (dauStrip) {
+        dauStrip.innerHTML = clients.length === 0
+          ? '<p style="color:#888888;font-size:0.85rem;">אין לקוחות</p>'
+          : clients.map(c => {
+              const color = c.lastCheckIn === today ? '#c8ff00' : (c.lastCheckIn ? '#ef4444' : '#555');
+              return `<div class="dau-chip"><span class="dau-dot" style="background:${color}"></span>${c.name}</div>`;
+            }).join('');
+      }
+
+      const cardsEl = document.getElementById('clientStatusCards');
+      if (!cardsEl) return;
+      if (clients.length === 0) { cardsEl.innerHTML = '<p style="color:#888">אין לקוחות עדיין</p>'; return; }
+
+      function urgencyScore(c) {
+        if (!c.lastCheckIn) return 9999;
+        const d = Math.floor((Date.now() - new Date(c.lastCheckIn).getTime()) / 864e5);
+        return d === 0 ? -1 : d;
+      }
+      const sorted = [...clients].sort((a, b) => urgencyScore(b) - urgencyScore(a));
+
+      cardsEl.innerHTML = sorted.map(c => {
+        const days = c.lastCheckIn ? Math.floor((Date.now() - new Date(c.lastCheckIn).getTime()) / 864e5) : null;
+        let borderColor, statusLabel;
+        if (!c.lastCheckIn)      { borderColor = '#333';    statusLabel = 'מעולם לא'; }
+        else if (days === 0)     { borderColor = '#c8ff00'; statusLabel = 'פעיל היום'; }
+        else if (days === 1)     { borderColor = '#f59e0b'; statusLabel = 'אתמול'; }
+        else if (days <= 3)      { borderColor = '#ef4444'; statusLabel = days + ' ימים'; }
+        else                     { borderColor = '#7f1d1d'; statusLabel = days + ' ימים ⚠️'; }
+        const cWorkouts = allWorkouts.filter(w => w.clientId === c.id);
+        const lastW = cWorkouts.length ? cWorkouts[cWorkouts.length - 1] : null;
+        const daysStr = days === null ? '' : days === 0 ? 'היום' : days === 1 ? 'אתמול' : days + ' ימים';
+        const subText = lastW ? (lastW.type + (daysStr ? ' · ' + daysStr : '')) : (daysStr || 'לא נכנס');
+        const streak = c.streak || 0;
+        const sClass = streak >= 60 ? 'streak-xl' : streak >= 30 ? 'streak-lg' : streak >= 7 ? 'streak-md' : 'streak-sm';
+        return `<div class="status-card" data-id="${c.id}" style="border-left-color:${borderColor}">
+          <div class="avatar">${c.name.charAt(0)}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:15px;color:#fff;">${c.name}</div>
+            <div style="font-size:12px;color:#888;margin-top:2px;">${subText}</div>
+          </div>
+          <div style="text-align:center;flex-shrink:0;">
+            <div class="${sClass}">🔥${streak}</div>
+            <div style="font-size:11px;color:${borderColor};margin-top:2px;">${statusLabel}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      cardsEl.querySelectorAll('.status-card').forEach(card => {
+        card.addEventListener('click', function () { showBottomSheet(Number(this.dataset.id)); });
+      });
+    }
+
+
+    // ---- Admin tab switching ----
+    document.querySelectorAll('.admin-tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.admin-tab-content').forEach(t => { t.style.display = 'none'; });
+        this.classList.add('active');
+        const tab = document.getElementById('adminTab-' + this.dataset.tab);
+        if (tab) tab.style.display = 'flex';
+        if (this.dataset.tab === 'clients') renderClientList();
+        if (this.dataset.tab === 'dashboard') { renderRedemptions(); renderClientStatusCards(); }
+        if (this.dataset.tab === 'data') renderBulkView();
+      });
+    });
+
+    // ---- Show/hide add client form ----
+    document.getElementById('showAddClientBtn').addEventListener('click', function () {
+      const form = document.getElementById('addClientForm');
+      const visible = form.style.display !== 'none';
+      form.style.display = visible ? 'none' : 'flex';
+      this.textContent = visible ? '+ הוסף לקוח' : '✕ סגור';
+    });
+
+    // ---- Portal measurements delete ----
+    document.getElementById('portalMeasurementsContent').addEventListener('click', function(e) {
+      const btn = e.target.closest('.btn-del-meas-portal');
+      if (!btn) return;
+      if (!confirm('האם למחוק את המדידה?')) return;
+      const idx = parseInt(btn.dataset.idx);
+      const clients = getClients();
+      const ci = clients.findIndex(c => c.email === currentClientEmail);
+      if (ci === -1) return;
+      clients[ci].measurements = clients[ci].measurements || [];
+      clients[ci].measurements.splice(idx, 1);
+      saveClients(clients);
+      renderPortalMeasurements(clients[ci]);
+    });
+
+    // ---- Portal tab switching ----
+    document.querySelectorAll('.portal-tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.portal-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.portal-tab-content').forEach(t => { t.style.display = 'none'; });
+        this.classList.add('active');
+        const tab = document.getElementById('portalTab-' + this.dataset.tab);
+        if (tab) tab.style.display = 'flex';
+        if (this.dataset.tab === 'stats') {
+          if (portalWRef.chart) portalWRef.chart.resize();
+          if (portalFRef.chart) portalFRef.chart.resize();
+        }
+      });
+    });
+
+    // ---- Step form navigation ----
+    document.getElementById('dvStep1Next').addEventListener('click', function () { switchDvStep(2); });
+    document.getElementById('dvStep2Next').addEventListener('click', function () { switchDvStep(3); });
+    document.getElementById('dvStep2Back').addEventListener('click', function () { switchDvStep(1); });
+    document.getElementById('dvStep3Back').addEventListener('click', function () { switchDvStep(2); });
+    document.querySelectorAll('.step-dot').forEach(function(dot) {
+      dot.addEventListener('click', function () { switchDvStep(Number(this.dataset.step)); });
+    });
+
+    // ---- getDailyQuote ----
+    function getDailyQuote() {
+      const quotes = [
+        'כל אימון הוא השקעה בעצמך. 💪',
+        'ההתחלה היא תמיד הקשה ביותר — אבל אתה כבר התחלת.',
+        'כאב של היום הוא כוח של מחר.',
+        'אל תספור את הימים — גרום לימים לספור.',
+        'ההבדל בין הצלחה לאי-הצלחה הוא הרגלים יומיומיים.',
+        'גופך מסוגל לכל דבר. שכנע את המוח.',
+        'כל צ׳ק אין הוא ניצחון. כל אימון הוא בחירה.',
+      ];
+      const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 864e5);
+      return quotes[dayOfYear % quotes.length];
+    }
+
+    // ---- checkWeeklySummary ----
+    function checkWeeklySummary(client) {
+      if (new Date().getDay() !== 0) return;
+      const weekKey = 'weeklySummary_' + Math.floor(Date.now() / (7 * 864e5));
+      if (localStorage.getItem(weekKey)) return;
+      localStorage.setItem(weekKey, '1');
+      const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+      const wkWorkouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+      const wkNutrition = JSON.parse(localStorage.getItem('nutrition') || '[]');
+      document.getElementById('wsWorkouts').textContent = wkWorkouts.filter(w => w.clientId === client.id && w.date >= weekAgo).length;
+      document.getElementById('wsNutrition').textContent = wkNutrition.filter(n => n.clientId === client.id && n.date >= weekAgo).length;
+      document.getElementById('wsStreak').textContent = client.streak || 0;
+      document.getElementById('weeklySummary').classList.add('show');
+    }
+
+    document.getElementById('wsDismiss').addEventListener('click', function () {
+      document.getElementById('weeklySummary').classList.remove('show');
+    });
+
+    // ---- Bottom sheet ----
+    let bottomSheetClientId = null;
+
+    function showBottomSheet(clientId) {
+      bottomSheetClientId = clientId;
+      const c = getClients().find(cl => cl.id === clientId);
+      if (!c) return;
+      document.getElementById('sheetClientName').textContent = c.name;
+      document.getElementById('sheetMeasureForm').style.display = 'none';
+      document.getElementById('sheetPointsForm').style.display = 'none';
+      document.getElementById('sheetWeight').value = '';
+      document.getElementById('sheetBelly').value = '';
+      document.getElementById('sheetPointsAmt').value = '';
+      document.getElementById('sheetPointsReason').value = '';
+      const waBtn = document.getElementById('sheetWhatsapp');
+      if (c.phone) {
+        waBtn.style.display = '';
+        waBtn.onclick = () => window.open('https://wa.me/972' + c.phone.replace(/^0/, '').replace(/\D/g, ''), '_blank');
+      } else { waBtn.style.display = 'none'; }
+      document.getElementById('bottomSheet').classList.add('open');
+    }
+
+    function closeBottomSheet() {
+      document.getElementById('bottomSheet').classList.remove('open');
+      bottomSheetClientId = null;
+    }
+
+    document.getElementById('sheetClose').addEventListener('click', closeBottomSheet);
+    document.getElementById('bottomSheet').addEventListener('click', function (e) {
+      if (e.target === this) closeBottomSheet();
+    });
+    document.getElementById('sheetViewProfile').addEventListener('click', function () {
+      const id = bottomSheetClientId;
+      closeBottomSheet();
+      if (id) showClientDeepView(id);
+    });
+    document.getElementById('sheetAddMeasure').addEventListener('click', function () {
+      const f = document.getElementById('sheetMeasureForm');
+      f.style.display = f.style.display === 'none' ? 'flex' : 'none';
+    });
+    document.getElementById('sheetMeasureSave').addEventListener('click', function () {
+      const weight = document.getElementById('sheetWeight').value;
+      const belly = document.getElementById('sheetBelly').value;
+      if (!weight && !belly) return;
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.id === bottomSheetClientId);
+      if (idx === -1) return;
+      if (!clients[idx].measurements) clients[idx].measurements = [];
+      clients[idx].measurements.push({ date: todayStr(), weight, belly, fatPct: '' });
+      saveClients(clients);
+      closeBottomSheet();
+    });
+    document.getElementById('sheetGrantPoints').addEventListener('click', function () {
+      const f = document.getElementById('sheetPointsForm');
+      f.style.display = f.style.display === 'none' ? 'flex' : 'none';
+    });
+    document.getElementById('sheetPointsSave').addEventListener('click', function () {
+      const amt = Number(document.getElementById('sheetPointsAmt').value);
+      const reason = document.getElementById('sheetPointsReason').value.trim() || 'בונוס מהמאמן';
+      if (!amt) return;
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.id === bottomSheetClientId);
+      if (idx === -1) return;
+      clients[idx].points = (clients[idx].points || 0) + amt;
+      addToLedger(clients[idx].id, 'bonus', amt, reason);
+      saveClients(clients);
+      closeBottomSheet();
+    });
+
+    // ---- renderBulkView ----
+    let bulkSortCol = 'lastCheckin', bulkSortAsc = false;
+
+    function renderBulkView() {
+      const clients = getClients();
+      const tbody = document.getElementById('bulkTableBody');
+      if (!tbody) return;
+      const rows = clients.map(c => {
+        const meas = c.measurements || [];
+        const last = meas.length ? meas[meas.length - 1] : {};
+        const days = c.lastCheckIn ? Math.floor((Date.now() - new Date(c.lastCheckIn).getTime()) / 864e5) : null;
+        return { id: c.id, name: c.name, lastCheckin: c.lastCheckIn || '', weight: last.weight || '', belly: last.belly || '', fat: last.fatPct || '', streak: c.streak || 0, days };
+      });
+      rows.sort((a, b) => {
+        let va = a[bulkSortCol], vb = b[bulkSortCol];
+        if (typeof va === 'string') va = va.toLowerCase();
+        if (typeof vb === 'string') vb = vb.toLowerCase();
+        if (va < vb) return bulkSortAsc ? -1 : 1;
+        if (va > vb) return bulkSortAsc ? 1 : -1;
+        return 0;
+      });
+      tbody.innerHTML = rows.map(r => `<tr>
+        <td>${r.name}</td>
+        <td>${r.lastCheckin ? (r.days === 0 ? 'היום' : r.days + ' ימים') : '—'}</td>
+        <td>${r.weight || '—'}</td>
+        <td>${r.belly || '—'}</td>
+        <td>${r.fat || '—'}</td>
+        <td>${r.streak}</td>
+      </tr>`).join('');
+      document.querySelectorAll('.bulk-table th').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (th.dataset.col === bulkSortCol) th.classList.add(bulkSortAsc ? 'sort-asc' : 'sort-desc');
+      });
+    }
+
+    document.querySelectorAll('.bulk-table th').forEach(th => {
+      th.addEventListener('click', function () {
+        if (bulkSortCol === this.dataset.col) bulkSortAsc = !bulkSortAsc;
+        else { bulkSortCol = this.dataset.col; bulkSortAsc = true; }
+        renderBulkView();
+      });
+    });
+
+    // ---- Client search bar ----
+    const clientSearchBarEl = document.getElementById('clientSearchBar');
+    if (clientSearchBarEl) {
+      clientSearchBarEl.addEventListener('input', function () {
+        const q = this.value.trim().toLowerCase();
+        document.querySelectorAll('#clientList .client-row').forEach(row => {
+          const name = (row.dataset.name || row.textContent).toLowerCase();
+          row.style.display = q === '' || name.includes(q) ? '' : 'none';
+        });
+      });
+    }
+  </script>
+  <!-- Background silhouette: person doing overhead press -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 372" aria-hidden="true"
+       style="position:fixed;bottom:0;right:0;width:162px;height:300px;z-index:-1;opacity:0.04;pointer-events:none;">
+    <g fill="#ffffff">
+      <!-- Left plate -->
+      <rect x="4" y="4" width="16" height="22" rx="3"/>
+      <!-- Right plate -->
+      <rect x="180" y="4" width="16" height="22" rx="3"/>
+      <!-- Barbell bar -->
+      <rect x="20" y="10" width="160" height="8" rx="4"/>
+
+      <!-- Left forearm (wrist to elbow, mostly vertical, slight outward angle) -->
+      <polygon points="44,26 52,26 56,60 48,60"/>
+      <!-- Right forearm -->
+      <polygon points="148,26 156,26 152,60 144,60"/>
+
+      <!-- Left elbow cap -->
+      <ellipse cx="52" cy="61" rx="7" ry="6"/>
+      <!-- Right elbow cap -->
+      <ellipse cx="148" cy="61" rx="7" ry="6"/>
+
+      <!-- Left upper arm (elbow to shoulder, angling outward) -->
+      <polygon points="46,60 58,60 70,108 56,108"/>
+      <!-- Right upper arm -->
+      <polygon points="142,60 154,60 144,108 130,108"/>
+
+      <!-- Head -->
+      <circle cx="100" cy="78" r="23"/>
+
+      <!-- Neck -->
+      <rect x="93" y="99" width="14" height="13" rx="3"/>
+
+      <!-- Torso -->
+      <path d="M56,108 Q100,98 144,108 L132,192 Q100,200 68,192 Z"/>
+
+      <!-- Hips -->
+      <path d="M68,190 Q100,200 132,190 L128,214 Q100,220 72,214 Z"/>
+
+      <!-- Left thigh -->
+      <path d="M72,212 L68,286 Q67,294 76,294 L92,294 Q100,294 98,286 L100,214 Z"/>
+      <!-- Right thigh -->
+      <path d="M128,212 L132,286 Q133,294 124,294 L108,294 Q100,294 102,286 L100,214 Z"/>
+
+      <!-- Left shin -->
+      <rect x="70" y="292" width="24" height="68" rx="6"/>
+      <!-- Right shin -->
+      <rect x="106" y="292" width="24" height="68" rx="6"/>
+
+      <!-- Left foot -->
+      <ellipse cx="79" cy="363" rx="28" ry="9"/>
+      <!-- Right foot -->
+      <ellipse cx="121" cy="363" rx="28" ry="9"/>
+    </g>
+  </svg>
+
+  <a id="staffToggle" href="#" style="position:fixed;bottom:6px;left:6px;color:transparent;font-size:10px;text-decoration:none;user-select:none;">.</a>
+  <script>
+    document.getElementById('staffToggle').addEventListener('click', function (e) {
+      e.preventDefault();
+      const next = sessionStorage.getItem('staffMode') === '1' ? '0' : '1';
+      sessionStorage.setItem('staffMode', next);
+      location.reload();
+    });
+  </script>
+</body>
+</html>
