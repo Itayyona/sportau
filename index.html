@@ -590,6 +590,9 @@
     body.a11y-stop-animations *::before,
     body.a11y-stop-animations *::after { animation: none !important; transition: none !important; }
   </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <div id="app">
@@ -1153,6 +1156,51 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <!-- Firebase init + startup sync -->
+  <script>
+    (function () {
+      firebase.initializeApp({
+        databaseURL: 'https://sporttau-default-rtdb.europe-west1.firebasedatabase.app'
+      });
+      window.rtdb = firebase.database();
+
+      window.fbSave = function (key, val) {
+        try { window.rtdb.ref(key).set(val); } catch (e) {}
+      };
+
+      var FB_KEYS = ['clients','workouts','nutrition','waterLog','sleepLog','checkins','pointsLedger'];
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var btn = document.getElementById('submitBtn');
+        var msg = document.getElementById('message');
+        if (btn) btn.disabled = true;
+        if (msg) msg.textContent = 'מתחבר...';
+
+        var pending = FB_KEYS.map(function (key) {
+          return window.rtdb.ref(key).once('value').then(function (snap) {
+            var val = snap.val();
+            if (val !== null) {
+              localStorage.setItem(key, JSON.stringify(val));
+            } else {
+              var local = localStorage.getItem(key);
+              if (local) window.fbSave(key, JSON.parse(local));
+            }
+          });
+        });
+
+        Promise.all(pending)
+          .then(function () {
+            if (btn) btn.disabled = false;
+            if (msg) msg.textContent = '';
+          })
+          .catch(function () {
+            if (btn) btn.disabled = false;
+            if (msg) msg.textContent = '';
+          });
+      });
+    })();
+  </script>
+
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js');
@@ -1232,6 +1280,7 @@
       const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
       ledger.push({ clientId, type, amount, reason, date: todayStr() });
       localStorage.setItem('pointsLedger', JSON.stringify(ledger));
+      window.fbSave && window.fbSave('pointsLedger', ledger);
     }
 
     let selectedGoal = null;
@@ -1356,6 +1405,7 @@
       const checkins = JSON.parse(localStorage.getItem('checkins') || '[]');
       checkins.push({ clientId: clients[idx].id, date: todayStr() });
       localStorage.setItem('checkins', JSON.stringify(checkins));
+      window.fbSave && window.fbSave('checkins', checkins);
       this.disabled = true;
       document.getElementById('portalStreak').textContent = streak;
       document.getElementById('portalPoints').textContent = clients[idx].points;
@@ -1408,6 +1458,7 @@
       const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
       workouts.push({ clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes });
       localStorage.setItem('workouts', JSON.stringify(workouts));
+      window.fbSave && window.fbSave('workouts', workouts);
       clients[idx].points = (clients[idx].points || 0) + 100;
       addToLedger(clients[idx].id, 'workout', 100, 'תיעוד אימון');
       saveClients(clients);
@@ -1438,6 +1489,7 @@
       const nutrition = JSON.parse(localStorage.getItem('nutrition') || '[]');
       nutrition.push({ clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat });
       localStorage.setItem('nutrition', JSON.stringify(nutrition));
+      window.fbSave && window.fbSave('nutrition', nutrition);
       clients[idx].points = (clients[idx].points || 0) + 75;
       addToLedger(clients[idx].id, 'nutrition', 75, 'תיעוד תזונה');
       saveClients(clients);
@@ -1492,6 +1544,7 @@
       const isNew = existing < 0;
       if (existing >= 0) log[existing] = entry; else log.push(entry);
       localStorage.setItem('waterLog', JSON.stringify(log));
+      window.fbSave && window.fbSave('waterLog', log);
       if (isNew) {
         clients[idx].points = (clients[idx].points || 0) + 20;
         addToLedger(clients[idx].id, 'water', 20, 'תיעוד מים');
@@ -1522,6 +1575,7 @@
       const isNew = existing < 0;
       if (existing >= 0) log[existing] = entry; else log.push(entry);
       localStorage.setItem('sleepLog', JSON.stringify(log));
+      window.fbSave && window.fbSave('sleepLog', log);
       if (isNew) {
         clients[idx].points = (clients[idx].points || 0) + 20;
         addToLedger(clients[idx].id, 'sleep', 20, 'תיעוד שינה');
@@ -1679,6 +1733,7 @@
 
     function saveClients(clients) {
       localStorage.setItem('clients', JSON.stringify(clients));
+      window.fbSave && window.fbSave('clients', clients);
     }
 
     function renderClientList() {
