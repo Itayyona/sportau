@@ -397,6 +397,12 @@
     .history-item { color: #cccccc; }
   .chart-canvas { background: #141414; border-radius: 8px; width: 100% !important; }
 
+    /* ===== DAILY DONE CARD ===== */
+    .daily-done-card { background: #141414; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 14px; width: 100%; }
+    .daily-done-icon { width: 38px; height: 38px; border-radius: 50%; background: #0f1f00; border: 2px solid #adff2f; color: #adff2f; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .daily-done-title { font-size: 15px; font-weight: 700; color: #adff2f; }
+    .daily-done-sub { font-size: 13px; color: #888; margin-top: 3px; }
+
     /* ===== ACCESSIBILITY BUTTON & PANEL ===== */
     #a11yBtn {
       position: fixed;
@@ -647,35 +653,57 @@
         </div>
         <div class="portal-section">
           <div class="portal-section-title">אימון היום</div>
-          <div class="workout-type-grid" id="workoutTypeGrid">
-            <button class="workout-type-btn" data-type="גוף מלא">גוף מלא</button>
-            <button class="workout-type-btn" data-type="חזה">חזה</button>
-            <button class="workout-type-btn" data-type="גב">גב</button>
-            <button class="workout-type-btn" data-type="כתפיים">כתפיים</button>
-            <button class="workout-type-btn" data-type="רגליים">רגליים</button>
-            <button class="workout-type-btn" data-type="ידיים">ידיים</button>
-            <button class="workout-type-btn" data-type="בטן">בטן</button>
-            <button class="workout-type-btn" data-type="קרדיו">קרדיו</button>
-            <button class="workout-type-btn" data-type="אחר">אחר</button>
+          <div id="workoutFormWrap" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="workout-type-grid" id="workoutTypeGrid">
+              <button class="workout-type-btn" data-type="גוף מלא">גוף מלא</button>
+              <button class="workout-type-btn" data-type="חזה">חזה</button>
+              <button class="workout-type-btn" data-type="גב">גב</button>
+              <button class="workout-type-btn" data-type="כתפיים">כתפיים</button>
+              <button class="workout-type-btn" data-type="רגליים">רגליים</button>
+              <button class="workout-type-btn" data-type="ידיים">ידיים</button>
+              <button class="workout-type-btn" data-type="בטן">בטן</button>
+              <button class="workout-type-btn" data-type="קרדיו">קרדיו</button>
+              <button class="workout-type-btn" data-type="אחר">אחר</button>
+            </div>
+            <div id="workoutNotesWrap" style="display:none; flex-direction:column; gap:10px;">
+              <textarea class="portal-notes" id="workoutNotes" placeholder="הערות..."></textarea>
+              <button class="btn-outline-lime" id="workoutSubmit">שמור אימון</button>
+            </div>
+            <p class="portal-feedback" id="workoutMsg" style="display:none;"></p>
           </div>
-          <div id="workoutNotesWrap" style="display:none; flex-direction:column; gap:10px;">
-            <textarea class="portal-notes" id="workoutNotes" placeholder="הערות..."></textarea>
-            <button class="btn-outline-lime" id="workoutSubmit">שמור אימון</button>
+          <div id="workoutLockedCard" style="display:none;">
+            <div class="daily-done-card">
+              <div class="daily-done-icon">✓</div>
+              <div>
+                <div class="daily-done-title">אימון נרשם היום ✓</div>
+                <div id="workoutLockedTypes" class="daily-done-sub"></div>
+              </div>
+            </div>
           </div>
-          <p class="portal-feedback" id="workoutMsg"></p>
         </div>
         <div class="portal-section">
           <div class="portal-section-title">תזונה</div>
-          <div class="form-row">
-            <input type="number" id="nutritionCalories" placeholder="קלוריות" min="0">
-            <input type="number" id="nutritionProtein" placeholder="חלבון (ג׳)" min="0">
+          <div id="nutritionFormWrap" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="form-row">
+              <input type="number" id="nutritionCalories" placeholder="קלוריות" min="0">
+              <input type="number" id="nutritionProtein" placeholder="חלבון (ג׳)" min="0">
+            </div>
+            <div class="form-row">
+              <input type="number" id="nutritionCarbs" placeholder="פחמימות (ג׳)" min="0">
+              <input type="number" id="nutritionFat" placeholder="שומן (ג׳)" min="0">
+            </div>
+            <button class="btn-outline-lime" id="nutritionSubmit">שמור תזונה</button>
+            <p class="portal-feedback" id="nutritionMsg" style="display:none;"></p>
           </div>
-          <div class="form-row">
-            <input type="number" id="nutritionCarbs" placeholder="פחמימות (ג׳)" min="0">
-            <input type="number" id="nutritionFat" placeholder="שומן (ג׳)" min="0">
+          <div id="nutritionLockedCard" style="display:none;">
+            <div class="daily-done-card">
+              <div class="daily-done-icon">✓</div>
+              <div>
+                <div class="daily-done-title">תזונה נרשמה היום ✓</div>
+                <div id="nutritionLockedCals" class="daily-done-sub"></div>
+              </div>
+            </div>
           </div>
-          <button class="btn-outline-lime" id="nutritionSubmit">שמור תזונה</button>
-          <p class="portal-feedback" id="nutritionMsg"></p>
         </div>
         <div class="data-card" id="waterCard" style="background:#141414;border-left:3px solid #c8ff00;border-radius:12px;padding:16px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px;">
           <div class="portal-section-title">כמה מים שתית היום? 💧</div>
@@ -1322,6 +1350,42 @@
       return new Date().toISOString().slice(0, 10);
     }
 
+    function refreshWorkoutState(client) {
+      const today = todayStr();
+      const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+      const todayEntries = workouts.filter(function (w) { return w.clientId === client.id && w.date === today; });
+      const formWrap = document.getElementById('workoutFormWrap');
+      const lockedCard = document.getElementById('workoutLockedCard');
+      if (todayEntries.length > 0) {
+        const allTypes = todayEntries.reduce(function (acc, w) {
+          (w.type || []).forEach(function (t) { if (acc.indexOf(t) === -1) acc.push(t); });
+          return acc;
+        }, []);
+        document.getElementById('workoutLockedTypes').textContent = allTypes.join(' · ');
+        formWrap.style.display = 'none';
+        lockedCard.style.display = '';
+      } else {
+        formWrap.style.display = '';
+        lockedCard.style.display = 'none';
+      }
+    }
+
+    function refreshNutritionState(client) {
+      const today = todayStr();
+      const nutrition = JSON.parse(localStorage.getItem('nutrition') || '[]');
+      const todayEntry = nutrition.find(function (n) { return n.clientId === client.id && n.date === today; });
+      const formWrap = document.getElementById('nutritionFormWrap');
+      const lockedCard = document.getElementById('nutritionLockedCard');
+      if (todayEntry) {
+        document.getElementById('nutritionLockedCals').textContent = todayEntry.calories + ' קלוריות';
+        formWrap.style.display = 'none';
+        lockedCard.style.display = '';
+      } else {
+        formWrap.style.display = '';
+        lockedCard.style.display = 'none';
+      }
+    }
+
     function showPortal(client) {
       hideAllScreens();
       document.getElementById('portalGoalBadge').textContent = client.goal || '—';
@@ -1392,6 +1456,8 @@
 
       document.getElementById('portalScreen').style.display = 'flex';
       refreshDailyLogs();
+      refreshWorkoutState(client);
+      refreshNutritionState(client);
     }
 
     document.getElementById('checkinBtn').addEventListener('click', function () {
@@ -1463,7 +1529,12 @@
     });
 
     document.getElementById('workoutSubmit').addEventListener('click', function () {
-      if (!selectedWorkoutTypes.length) { document.getElementById('workoutMsg').textContent = 'יש לבחור סוג אימון'; return; }
+      if (!selectedWorkoutTypes.length) {
+        const wMsgEl = document.getElementById('workoutMsg');
+        wMsgEl.style.display = '';
+        wMsgEl.textContent = 'יש לבחור סוג אימון';
+        return;
+      }
       const notes = document.getElementById('workoutNotes').value.trim();
       const clients = getClients();
       const idx = clients.findIndex(c => c.email === currentClientEmail);
@@ -1472,17 +1543,10 @@
       workouts.push({ clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes });
       localStorage.setItem('workouts', JSON.stringify(workouts));
       window.fbSave && window.fbSave('workouts', workouts);
-      const wFirstToday = canAwardPoints(clients[idx].id, 'workout');
-      if (wFirstToday) {
-        clients[idx].points = (clients[idx].points || 0) + 100;
-        addToLedger(clients[idx].id, 'workout', 100, 'תיעוד אימון');
-        markPointsAwarded(clients[idx].id, 'workout');
-      }
+      clients[idx].points = (clients[idx].points || 0) + 100;
+      addToLedger(clients[idx].id, 'workout', 100, 'תיעוד אימון');
       saveClients(clients);
       document.getElementById('portalPoints').textContent = clients[idx].points;
-      const wMsgEl = document.getElementById('workoutMsg');
-      wMsgEl.textContent = wFirstToday ? '+100 נקודות' : 'נשמר ✓';
-      setTimeout(function () { wMsgEl.textContent = ''; }, 2000);
       // Workout celebration
       const wCelebEl = document.getElementById('workoutCelebration');
       document.getElementById('wCelebName').textContent = 'כל הכבוד ' + clients[idx].name + '!';
@@ -1490,10 +1554,8 @@
       wCelebEl.classList.add('show');
       setTimeout(() => wCelebEl.classList.remove('show'), 1500);
       renderRewards(clients[idx]);
-      document.querySelectorAll('.workout-type-btn').forEach(b => b.classList.remove('selected'));
       selectedWorkoutTypes = [];
-      document.getElementById('workoutNotes').value = '';
-      document.getElementById('workoutNotesWrap').style.display = 'none';
+      refreshWorkoutState(clients[idx]);
     });
 
     document.getElementById('nutritionSubmit').addEventListener('click', function () {
@@ -1501,7 +1563,12 @@
       const protein = document.getElementById('nutritionProtein').value;
       const carbs = document.getElementById('nutritionCarbs').value;
       const fat = document.getElementById('nutritionFat').value;
-      if (!calories) { document.getElementById('nutritionMsg').textContent = 'יש להזין קלוריות'; return; }
+      if (!calories) {
+        const nMsgEl = document.getElementById('nutritionMsg');
+        nMsgEl.style.display = '';
+        nMsgEl.textContent = 'יש להזין קלוריות';
+        return;
+      }
       const clients = getClients();
       const idx = clients.findIndex(c => c.email === currentClientEmail);
       if (idx === -1) return;
@@ -1509,22 +1576,12 @@
       nutrition.push({ clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat });
       localStorage.setItem('nutrition', JSON.stringify(nutrition));
       window.fbSave && window.fbSave('nutrition', nutrition);
-      const nFirstToday = canAwardPoints(clients[idx].id, 'nutrition');
-      if (nFirstToday) {
-        clients[idx].points = (clients[idx].points || 0) + 75;
-        addToLedger(clients[idx].id, 'nutrition', 75, 'תיעוד תזונה');
-        markPointsAwarded(clients[idx].id, 'nutrition');
-      }
+      clients[idx].points = (clients[idx].points || 0) + 75;
+      addToLedger(clients[idx].id, 'nutrition', 75, 'תיעוד תזונה');
       saveClients(clients);
       document.getElementById('portalPoints').textContent = clients[idx].points;
-      const nMsgEl = document.getElementById('nutritionMsg');
-      nMsgEl.textContent = nFirstToday ? '+75 נקודות' : 'נשמר ✓';
-      setTimeout(function () { nMsgEl.textContent = ''; }, 2000);
       renderRewards(clients[idx]);
-      document.getElementById('nutritionCalories').value = '';
-      document.getElementById('nutritionProtein').value = '';
-      document.getElementById('nutritionCarbs').value = '';
-      document.getElementById('nutritionFat').value = '';
+      refreshNutritionState(clients[idx]);
     });
 
     // ---- Water / Sleep logging ----
