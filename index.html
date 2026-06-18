@@ -1192,10 +1192,12 @@
           .then(function () {
             if (btn) btn.disabled = false;
             if (msg) msg.textContent = '';
+            window.seedDefaultClient && window.seedDefaultClient();
           })
           .catch(function () {
             if (btn) btn.disabled = false;
             if (msg) msg.textContent = '';
+            window.seedDefaultClient && window.seedDefaultClient();
           });
       });
     })();
@@ -1238,7 +1240,7 @@
       setInterval(checkNutritionReminder, 60000);
     })();
 
-    (function seedDefaultClient() {
+    window.seedDefaultClient = function () {
       const clients = JSON.parse(localStorage.getItem('clients') || '[]');
       if (!clients.some(c => c.email === 'itayyona6@gmail.com')) {
         clients.unshift({
@@ -1255,7 +1257,8 @@
         });
         localStorage.setItem('clients', JSON.stringify(clients));
       }
-    })();
+    };
+    window.seedDefaultClient();
 
     const isAdmin = (function () {
       try {
@@ -1281,6 +1284,13 @@
       ledger.push({ clientId, type, amount, reason, date: todayStr() });
       localStorage.setItem('pointsLedger', JSON.stringify(ledger));
       window.fbSave && window.fbSave('pointsLedger', ledger);
+    }
+
+    function canAwardPoints(clientId, action) {
+      return !localStorage.getItem('pts_' + clientId + '_' + action + '_' + todayStr());
+    }
+    function markPointsAwarded(clientId, action) {
+      localStorage.setItem('pts_' + clientId + '_' + action + '_' + todayStr(), '1');
     }
 
     let selectedGoal = null;
@@ -1390,16 +1400,19 @@
       if (idx === -1) return;
       clients[idx].lastCheckIn = todayStr();
       clients[idx].streak = (clients[idx].streak || 0) + 1;
-      clients[idx].points = (clients[idx].points || 0) + 50;
-      addToLedger(clients[idx].id, 'checkin', 50, "צ'ק אין יומי");
       const streak = clients[idx].streak;
       let bonusMsg = '';
       const streakMilestones = { 7: 100, 14: 200, 21: 300, 30: 500 };
-      if (streakMilestones[streak]) {
-        const bonus = streakMilestones[streak];
-        clients[idx].points += bonus;
-        addToLedger(clients[idx].id, 'bonus', bonus, `בונוס סטריק ${streak} ימים 🔥`);
-        bonusMsg = ` +${bonus} בונוס ${streak} ימים 🔥`;
+      if (canAwardPoints(clients[idx].id, 'checkin')) {
+        clients[idx].points = (clients[idx].points || 0) + 50;
+        addToLedger(clients[idx].id, 'checkin', 50, "צ'ק אין יומי");
+        markPointsAwarded(clients[idx].id, 'checkin');
+        if (streakMilestones[streak]) {
+          const bonus = streakMilestones[streak];
+          clients[idx].points += bonus;
+          addToLedger(clients[idx].id, 'bonus', bonus, `בונוס סטריק ${streak} ימים 🔥`);
+          bonusMsg = ` +${bonus} בונוס ${streak} ימים 🔥`;
+        }
       }
       saveClients(clients);
       const checkins = JSON.parse(localStorage.getItem('checkins') || '[]');
@@ -1459,11 +1472,17 @@
       workouts.push({ clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes });
       localStorage.setItem('workouts', JSON.stringify(workouts));
       window.fbSave && window.fbSave('workouts', workouts);
-      clients[idx].points = (clients[idx].points || 0) + 100;
-      addToLedger(clients[idx].id, 'workout', 100, 'תיעוד אימון');
+      const wFirstToday = canAwardPoints(clients[idx].id, 'workout');
+      if (wFirstToday) {
+        clients[idx].points = (clients[idx].points || 0) + 100;
+        addToLedger(clients[idx].id, 'workout', 100, 'תיעוד אימון');
+        markPointsAwarded(clients[idx].id, 'workout');
+      }
       saveClients(clients);
       document.getElementById('portalPoints').textContent = clients[idx].points;
-      document.getElementById('workoutMsg').textContent = '+100 נקודות';
+      const wMsgEl = document.getElementById('workoutMsg');
+      wMsgEl.textContent = wFirstToday ? '+100 נקודות' : 'נשמר ✓';
+      setTimeout(function () { wMsgEl.textContent = ''; }, 2000);
       // Workout celebration
       const wCelebEl = document.getElementById('workoutCelebration');
       document.getElementById('wCelebName').textContent = 'כל הכבוד ' + clients[idx].name + '!';
@@ -1490,11 +1509,17 @@
       nutrition.push({ clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat });
       localStorage.setItem('nutrition', JSON.stringify(nutrition));
       window.fbSave && window.fbSave('nutrition', nutrition);
-      clients[idx].points = (clients[idx].points || 0) + 75;
-      addToLedger(clients[idx].id, 'nutrition', 75, 'תיעוד תזונה');
+      const nFirstToday = canAwardPoints(clients[idx].id, 'nutrition');
+      if (nFirstToday) {
+        clients[idx].points = (clients[idx].points || 0) + 75;
+        addToLedger(clients[idx].id, 'nutrition', 75, 'תיעוד תזונה');
+        markPointsAwarded(clients[idx].id, 'nutrition');
+      }
       saveClients(clients);
       document.getElementById('portalPoints').textContent = clients[idx].points;
-      document.getElementById('nutritionMsg').textContent = '+75 נקודות';
+      const nMsgEl = document.getElementById('nutritionMsg');
+      nMsgEl.textContent = nFirstToday ? '+75 נקודות' : 'נשמר ✓';
+      setTimeout(function () { nMsgEl.textContent = ''; }, 2000);
       renderRewards(clients[idx]);
       document.getElementById('nutritionCalories').value = '';
       document.getElementById('nutritionProtein').value = '';
