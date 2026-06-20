@@ -923,11 +923,18 @@
           <p class="portal-feedback" id="dvStatsMsg"></p>
         </div>
         <div class="portal-section">
-          <h3>הענק נקודות</h3>
+          <h3>נקודות</h3>
           <input type="number" id="dvPointsAmount" placeholder="כמות נקודות" min="1">
-          <input type="text" class="portal-input" id="dvPointsReason" placeholder="סיבה">
-          <button id="dvPointsBtn" class="btn-outline-lime">הענק נקודות</button>
+          <input type="text" class="portal-input" id="dvPointsReason" placeholder="סיבה (חובה)">
+          <div style="display:flex;gap:8px;">
+            <button id="dvPointsBtn" class="btn-outline-lime" style="flex:1;">הענק נקודות ➕</button>
+            <button id="dvPointsDeductBtn" style="flex:1;height:52px;border:1px solid #ef4444;color:#ef4444;background:transparent;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;">הוריד נקודות ➖</button>
+          </div>
           <p class="portal-feedback" id="dvPointsMsg"></p>
+        </div>
+        <div class="portal-section">
+          <h3>היסטוריית נקודות</h3>
+          <div id="dvPointsHistory"></div>
         </div>
         <div class="portal-section">
           <h3>היסטוריית צ׳ק אין</h3>
@@ -1957,11 +1964,30 @@
       ['dvMenuMsg','dvWorkoutPlanMsg','dvRulesMsg','dvStatsMsg','dvPointsMsg'].forEach(id => document.getElementById(id).textContent = '');
       document.getElementById('dvPointsAmount').value = '';
       document.getElementById('dvPointsReason').value = '';
+      renderDvPointsHistory(clientId);
       document.getElementById('dvTrackDate').value = todayStr();
       ['dvTrackFat','dvTrackWeight','dvTrackBelly','dvTrackArm','dvTrackNeck','dvTrackRmr','dvTrackBmi'].forEach(id => document.getElementById(id).value = '');
 
       hideAllScreens();
       document.getElementById('clientDeepView').style.display = 'flex';
+    }
+
+    function renderDvPointsHistory(clientId) {
+      const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]')
+        .filter(e => e.clientId === clientId).reverse();
+      const el = document.getElementById('dvPointsHistory');
+      if (!ledger.length) { el.innerHTML = '<p class="empty-state">אין היסטוריית נקודות</p>'; return; }
+      el.innerHTML = ledger.map(function (e) {
+        const isDeduct = e.type === 'deduct' || e.amount < 0;
+        const sign = isDeduct ? '−' : '+';
+        const abs = Math.abs(e.amount);
+        const color = isDeduct ? '#ef4444' : '#adff2f';
+        const date = e.date || (e.grantedAt ? e.grantedAt.slice(0, 10) : '');
+        return `<div class="history-item" style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:${color};font-weight:700;">${sign}${abs} נקודות</span>
+          <span style="color:#888;font-size:0.8rem;text-align:right;">${e.reason || ''}${date ? ' · ' + date : ''}</span>
+        </div>`;
+      }).join('');
     }
 
     function renderDvNotes(clientId) {
@@ -1988,18 +2014,42 @@
       const amount = parseInt(document.getElementById('dvPointsAmount').value);
       const reason = document.getElementById('dvPointsReason').value.trim();
       if (!amount || amount < 1) { document.getElementById('dvPointsMsg').textContent = 'יש להזין כמות'; return; }
+      if (!reason) { document.getElementById('dvPointsMsg').textContent = 'יש להזין סיבה'; return; }
       const clients = getClients();
       const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
       if (idx === -1) return;
       clients[idx].points = (clients[idx].points || 0) + amount;
       saveClients(clients);
       const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
-      ledger.push({ clientId: currentDeepViewClientId, amount, reason, grantedAt: new Date().toISOString() });
+      ledger.push({ clientId: currentDeepViewClientId, type: 'grant', amount, reason, date: todayStr(), grantedAt: new Date().toISOString() });
       localStorage.setItem('pointsLedger', JSON.stringify(ledger));
+      window.fbSave && window.fbSave('pointsLedger', ledger);
       document.getElementById('dvPoints').textContent = clients[idx].points;
       document.getElementById('dvPointsAmount').value = '';
       document.getElementById('dvPointsReason').value = '';
-      document.getElementById('dvPointsMsg').textContent = `+${amount} נקודות הוענקו`;
+      document.getElementById('dvPointsMsg').textContent = `+${amount} נקודות הוענקו ✓`;
+      renderDvPointsHistory(currentDeepViewClientId);
+    });
+
+    document.getElementById('dvPointsDeductBtn').addEventListener('click', function () {
+      const amount = parseInt(document.getElementById('dvPointsAmount').value);
+      const reason = document.getElementById('dvPointsReason').value.trim();
+      if (!amount || amount < 1) { document.getElementById('dvPointsMsg').textContent = 'יש להזין כמות'; return; }
+      if (!reason) { document.getElementById('dvPointsMsg').textContent = 'יש להזין סיבה'; return; }
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
+      if (idx === -1) return;
+      clients[idx].points = Math.max(0, (clients[idx].points || 0) - amount);
+      saveClients(clients);
+      const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
+      ledger.push({ clientId: currentDeepViewClientId, type: 'deduct', amount: -amount, reason, date: todayStr(), grantedAt: new Date().toISOString() });
+      localStorage.setItem('pointsLedger', JSON.stringify(ledger));
+      window.fbSave && window.fbSave('pointsLedger', ledger);
+      document.getElementById('dvPoints').textContent = clients[idx].points;
+      document.getElementById('dvPointsAmount').value = '';
+      document.getElementById('dvPointsReason').value = '';
+      document.getElementById('dvPointsMsg').textContent = `−${amount} נקודות הורדו ✓`;
+      renderDvPointsHistory(currentDeepViewClientId);
     });
 
     let portalWeightChart = null, portalFatChart = null;
