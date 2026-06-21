@@ -1203,7 +1203,7 @@
         try { window.rtdb.ref(key).set(val); } catch (e) {}
       };
 
-      var FB_KEYS = ['clients','workouts','nutrition','waterLog','sleepLog','checkins','pointsLedger'];
+      var FB_KEYS = ['clients','workouts','nutrition','waterLog','sleepLog','checkins','pointsLedger','redemptions','notes'];
 
       document.addEventListener('DOMContentLoaded', function () {
         var btn = document.getElementById('submitBtn');
@@ -1716,6 +1716,7 @@
           const redemptions = JSON.parse(localStorage.getItem('redemptions') || '[]');
           redemptions.push({ clientId: clients[idx].id, clientName: clients[idx].name, reward: this.dataset.label, date: todayStr(), status: 'pending' });
           localStorage.setItem('redemptions', JSON.stringify(redemptions));
+          window.fbSave && window.fbSave('redemptions', redemptions);
           document.getElementById('portalPoints').textContent = clients[idx].points;
           document.getElementById('rewardsMsg').textContent = 'הבקשה נשלחה! 🎉';
           renderRewards(clients[idx]);
@@ -1744,6 +1745,7 @@
           const redemptions2 = JSON.parse(localStorage.getItem('redemptions') || '[]');
           redemptions2[Number(this.dataset.idx)].status = 'completed';
           localStorage.setItem('redemptions', JSON.stringify(redemptions2));
+          window.fbSave && window.fbSave('redemptions', redemptions2);
           renderRedemptions();
         });
       });
@@ -2006,6 +2008,7 @@
       const notes = JSON.parse(localStorage.getItem('notes') || '[]');
       notes.push({ clientId: currentDeepViewClientId, content, createdAt: new Date().toISOString() });
       localStorage.setItem('notes', JSON.stringify(notes));
+      window.fbSave && window.fbSave('notes', notes);
       document.getElementById('dvNoteInput').value = '';
       renderDvNotes(currentDeepViewClientId);
     });
