@@ -595,6 +595,18 @@
     body.a11y-stop-animations *,
     body.a11y-stop-animations *::before,
     body.a11y-stop-animations *::after { animation: none !important; transition: none !important; }
+    /* Notification permission overlay */
+    #notifOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:9000; align-items:center; justify-content:center; padding:24px; }
+    #notifCard { background:#111; border-radius:20px; padding:32px 24px; max-width:360px; width:100%; display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center; border:1px solid #222; }
+    #notifCard .notif-logo { width:64px; filter:invert(1); }
+    .notif-title { font-size:1.2rem; font-weight:700; color:#fff; }
+    .notif-body { font-size:0.9rem; color:#aaa; line-height:1.6; }
+    #notifAllowBtn { width:100%; background:#c8ff00; color:#000; font-weight:700; font-size:16px; padding:16px; border-radius:12px; border:none; cursor:pointer; margin-top:4px; }
+    #notifLaterLink { background:none; border:none; color:#555; font-size:0.85rem; cursor:pointer; padding:4px 8px; width:auto; text-decoration:underline; }
+    #notifSuccess { font-size:0.95rem; color:#c8ff00; font-weight:600; }
+    /* Bell button in portal header */
+    #bellBtn { width:auto; background:none; border:none; cursor:pointer; font-size:18px; padding:2px 6px; line-height:1; }
+    #bellBtn.bell-off { opacity:0.35; filter:grayscale(1); }
   </style>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -644,13 +656,9 @@
           <span class="points-block">⭐ <span id="portalPoints">0</span></span>
           <span class="streak-block">🔥 <span id="portalStreak">0</span></span>
           <span class="goal-badge" id="portalGoalBadge"></span>
+          <button id="bellBtn" class="bell-off" title="הפעל התראות" aria-label="התראות">🔔</button>
         </div>
         <div style="display:flex;justify-content:center;padding:8px 0 0;"><img src="logo.png" style="width:80px;filter:invert(1);" onerror="this.style.display='none'"></div>
-        <div class="daily-quote" id="dailyQuote" style="margin:12px 16px 0;"></div>
-        <div class="portal-section">
-          <button class="btn-checkin" id="checkinBtn">צ׳ק אין יומי</button>
-          <p class="portal-feedback" id="checkinMsg"></p>
-        </div>
         <div class="portal-section">
           <div class="portal-section-title">אימון היום</div>
           <div id="workoutFormWrap" style="display:flex;flex-direction:column;gap:12px;">
@@ -732,6 +740,11 @@
         <div class="data-card" id="portalStatsCard">
           <div class="data-card-title">הנתונים שלי</div>
           <div class="stats-grid" id="portalStatsGrid"></div>
+        </div>
+        <div class="daily-quote" id="dailyQuote" style="margin:16px 0 4px;"></div>
+        <div class="portal-section" style="margin-top:8px;">
+          <button class="btn-checkin" id="checkinBtn">צ׳ק אין יומי</button>
+          <p class="portal-feedback" id="checkinMsg"></p>
         </div>
       </div>
 
@@ -1247,32 +1260,35 @@
     (function initNotifications() {
       if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
 
-      function requestPermission() {
-        if (Notification.permission === 'default') {
-          Notification.requestPermission();
-        }
-      }
-
-      requestPermission();
-
-      function checkNutritionReminder() {
+      window.scheduleNutritionReminder = function () {
         if (Notification.permission !== 'granted') return;
+        clearTimeout(window._notifTimeout);
         const now = new Date();
-        if (now.getHours() !== 20 || now.getMinutes() !== 30) return;
-        const todayKey = 'nutritionNotif_' + now.toISOString().slice(0, 10);
-        if (localStorage.getItem(todayKey)) return;
-        localStorage.setItem(todayKey, '1');
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification('Sportau 🍽️', {
-            body: 'מה אכלת היום? 🍽️ אל תשכח לתעד את התזונה שלך',
-            icon: 'manifest.json',
-            tag: 'nutrition-reminder',
-            renotify: false
-          });
-        });
-      }
+        const target = new Date();
+        target.setHours(20, 30, 0, 0);
+        if (now >= target) target.setDate(target.getDate() + 1);
+        const ms = target - now;
+        window._notifTimeout = setTimeout(function () {
+          const todayKey = 'nutritionNotif_' + new Date().toISOString().slice(0, 10);
+          if (!localStorage.getItem(todayKey)) {
+            localStorage.setItem(todayKey, '1');
+            navigator.serviceWorker.ready.then(function (reg) {
+              reg.showNotification('Sportau 🏋️', {
+                body: 'מה אכלת היום? אל תשכח לתעד את התזונה שלך 🍽️',
+                icon: '/sportau/sportau_logo.png',
+                badge: '/sportau/sportau_logo.png',
+                tag: 'nutrition-reminder',
+                requireInteraction: true
+              });
+            });
+          }
+          window.scheduleNutritionReminder();
+        }, ms);
+      };
 
-      setInterval(checkNutritionReminder, 60000);
+      if (Notification.permission === 'granted') {
+        window.scheduleNutritionReminder();
+      }
     })();
 
     window.seedDefaultClient = function () {
@@ -1465,6 +1481,11 @@
       refreshDailyLogs();
       refreshWorkoutState(client);
       refreshNutritionState(client);
+      if ('Notification' in window && Notification.permission === 'default' && !window._notifOverlayShown) {
+        window._notifOverlayShown = true;
+        document.getElementById('notifOverlay').style.display = 'flex';
+      }
+      window.updateBellBtn && window.updateBellBtn();
     }
 
     document.getElementById('checkinBtn').addEventListener('click', function () {
@@ -2927,6 +2948,69 @@
         document.getElementById('a11yStatement').classList.remove('active');
         document.getElementById('a11yMain').style.display = '';
         document.getElementById('a11yPanelBox').scrollTop = 0;
+      });
+    })();
+  </script>
+
+  <!-- Notification permission overlay -->
+  <div id="notifOverlay">
+    <div id="notifCard">
+      <img class="notif-logo" src="logo.png" onerror="this.style.display='none'">
+      <div class="notif-title">הישאר מעודכן 🔔</div>
+      <div class="notif-body">אפשר התראות כדי לקבל תזכורת יומית ב-20:30 לתיעוד התזונה שלך</div>
+      <button id="notifAllowBtn">אפשר התראות</button>
+      <div id="notifSuccess" style="display:none;">מעולה! תקבל תזכורת כל יום ב-20:30 ✓</div>
+      <button id="notifLaterLink">אולי אחר כך</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      if (!('Notification' in window)) return;
+
+      window.updateBellBtn = function () {
+        var btn = document.getElementById('bellBtn');
+        if (!btn) return;
+        if (Notification.permission === 'granted') {
+          btn.classList.remove('bell-off');
+          btn.title = '✓ התראות פעילות';
+        } else {
+          btn.classList.add('bell-off');
+          btn.title = 'הפעל התראות';
+        }
+      };
+
+      document.getElementById('notifAllowBtn').addEventListener('click', function () {
+        Notification.requestPermission().then(function (perm) {
+          window.updateBellBtn();
+          if (perm === 'granted') {
+            window.scheduleNutritionReminder && window.scheduleNutritionReminder();
+            document.getElementById('notifAllowBtn').style.display = 'none';
+            document.getElementById('notifLaterLink').style.display = 'none';
+            document.getElementById('notifSuccess').style.display = 'block';
+            setTimeout(function () {
+              document.getElementById('notifOverlay').style.display = 'none';
+            }, 1800);
+          } else {
+            document.getElementById('notifOverlay').style.display = 'none';
+          }
+        });
+      });
+
+      document.getElementById('notifLaterLink').addEventListener('click', function () {
+        document.getElementById('notifOverlay').style.display = 'none';
+      });
+
+      document.getElementById('bellBtn').addEventListener('click', function () {
+        if (Notification.permission === 'granted') return;
+        if (Notification.permission === 'denied') {
+          alert('ההתראות חסומות בדפדפן. כנס להגדרות הדפדפן ואפשר ידנית עבור אתר זה.');
+          return;
+        }
+        Notification.requestPermission().then(function () {
+          window.updateBellBtn();
+          window.scheduleNutritionReminder && window.scheduleNutritionReminder();
+        });
       });
     })();
   </script>
