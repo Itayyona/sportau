@@ -611,6 +611,7 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
   <div id="app">
@@ -1207,9 +1208,17 @@
   <!-- Firebase init + startup sync -->
   <script>
     (function () {
-      firebase.initializeApp({
-        databaseURL: 'https://sporttau-default-rtdb.europe-west1.firebasedatabase.app'
-      });
+      var firebaseConfig = {
+        apiKey: "AIzaSyAkJaF2z1numqytfQsU5J8TW_zhQgbIcKg",
+        authDomain: "sporttau.firebaseapp.com",
+        databaseURL: "https://sporttau-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "sporttau",
+        storageBucket: "sporttau.firebasestorage.app",
+        messagingSenderId: "1003913958605",
+        appId: "1:1003913958605:web:d9070cbacd2d55a65f0584",
+        measurementId: "G-Q1V2ZP6YZX"
+      };
+      firebase.initializeApp(firebaseConfig);
       window.rtdb = firebase.database();
 
       window.fbSave = function (key, val) {
@@ -1260,29 +1269,24 @@
     (function initNotifications() {
       if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
 
-      window.scheduleNutritionReminder = function () {
+      window.scheduleNutritionReminder = function scheduleNutritionReminder() {
         if (Notification.permission !== 'granted') return;
-        clearTimeout(window._notifTimeout);
-        const now = new Date();
-        const target = new Date();
+        var now = new Date();
+        var target = new Date();
         target.setHours(20, 30, 0, 0);
         if (now >= target) target.setDate(target.getDate() + 1);
-        const ms = target - now;
-        window._notifTimeout = setTimeout(function () {
-          const todayKey = 'nutritionNotif_' + new Date().toISOString().slice(0, 10);
-          if (!localStorage.getItem(todayKey)) {
-            localStorage.setItem(todayKey, '1');
-            navigator.serviceWorker.ready.then(function (reg) {
-              reg.showNotification('Sportau 🏋️', {
-                body: 'מה אכלת היום? אל תשכח לתעד את התזונה שלך 🍽️',
-                icon: '/sportau/sportau_logo.png',
-                badge: '/sportau/sportau_logo.png',
-                tag: 'nutrition-reminder',
-                requireInteraction: true
-              });
+        var ms = target - now;
+        setTimeout(function() {
+          navigator.serviceWorker.ready.then(function(reg) {
+            reg.showNotification('Sportau 🏋️', {
+              body: 'מה אכלת היום? אל תשכח לתעד את התזונה שלך 🍽️',
+              icon: '/sportau/sportau_logo.png',
+              tag: 'nutrition-reminder',
+              requireInteraction: true,
+              vibrate: [200, 100, 200]
             });
-          }
-          window.scheduleNutritionReminder();
+          });
+          scheduleNutritionReminder();
         }, ms);
       };
 
@@ -1498,8 +1502,8 @@
       let bonusMsg = '';
       const streakMilestones = { 7: 100, 14: 200, 21: 300, 30: 500 };
       if (canAwardPoints(clients[idx].id, 'checkin')) {
-        clients[idx].points = (clients[idx].points || 0) + 50;
-        addToLedger(clients[idx].id, 'checkin', 50, "צ'ק אין יומי");
+        clients[idx].points = (clients[idx].points || 0) + 20;
+        addToLedger(clients[idx].id, 'checkin', 20, "צ'ק אין יומי");
         markPointsAwarded(clients[idx].id, 'checkin');
         if (streakMilestones[streak]) {
           const bonus = streakMilestones[streak];
@@ -1516,7 +1520,7 @@
       this.disabled = true;
       document.getElementById('portalStreak').textContent = streak;
       document.getElementById('portalPoints').textContent = clients[idx].points;
-      document.getElementById('checkinMsg').textContent = 'כל הכבוד! +50 נקודות' + bonusMsg;
+      document.getElementById('checkinMsg').textContent = 'כל הכבוד! +20 נקודות' + bonusMsg;
 
       renderRewards(clients[idx]);
       // Check-in celebration
@@ -1571,8 +1575,8 @@
       workouts.push({ clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes });
       localStorage.setItem('workouts', JSON.stringify(workouts));
       window.fbSave && window.fbSave('workouts', workouts);
-      clients[idx].points = (clients[idx].points || 0) + 100;
-      addToLedger(clients[idx].id, 'workout', 100, 'תיעוד אימון');
+      clients[idx].points = (clients[idx].points || 0) + 25;
+      addToLedger(clients[idx].id, 'workout', 25, 'תיעוד אימון');
       saveClients(clients);
       document.getElementById('portalPoints').textContent = clients[idx].points;
       // Workout celebration
@@ -1604,8 +1608,8 @@
       nutrition.push({ clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat });
       localStorage.setItem('nutrition', JSON.stringify(nutrition));
       window.fbSave && window.fbSave('nutrition', nutrition);
-      clients[idx].points = (clients[idx].points || 0) + 75;
-      addToLedger(clients[idx].id, 'nutrition', 75, 'תיעוד תזונה');
+      clients[idx].points = (clients[idx].points || 0) + 5;
+      addToLedger(clients[idx].id, 'nutrition', 5, 'תיעוד תזונה');
       saveClients(clients);
       document.getElementById('portalPoints').textContent = clients[idx].points;
       renderRewards(clients[idx]);
@@ -1656,12 +1660,12 @@
       localStorage.setItem('waterLog', JSON.stringify(log));
       window.fbSave && window.fbSave('waterLog', log);
       if (isNew) {
-        clients[idx].points = (clients[idx].points || 0) + 20;
-        addToLedger(clients[idx].id, 'water', 20, 'תיעוד מים');
+        clients[idx].points = (clients[idx].points || 0) + 5;
+        addToLedger(clients[idx].id, 'water', 5, 'תיעוד מים');
       }
       saveClients(clients);
       document.getElementById('portalPoints').textContent = clients[idx].points;
-      document.getElementById('waterMsg').textContent = isNew ? '+20 נקודות 💧' : 'עודכן ✓';
+      document.getElementById('waterMsg').textContent = isNew ? '+5 נקודות 💧' : 'עודכן ✓';
       document.getElementById('waterInput').value = '';
       renderRewards(clients[idx]);
       refreshDailyLogs();
@@ -1687,12 +1691,12 @@
       localStorage.setItem('sleepLog', JSON.stringify(log));
       window.fbSave && window.fbSave('sleepLog', log);
       if (isNew) {
-        clients[idx].points = (clients[idx].points || 0) + 20;
-        addToLedger(clients[idx].id, 'sleep', 20, 'תיעוד שינה');
+        clients[idx].points = (clients[idx].points || 0) + 5;
+        addToLedger(clients[idx].id, 'sleep', 5, 'תיעוד שינה');
       }
       saveClients(clients);
       document.getElementById('portalPoints').textContent = clients[idx].points;
-      document.getElementById('sleepMsg').textContent = isNew ? '+20 נקודות 😴' : 'עודכן ✓';
+      document.getElementById('sleepMsg').textContent = isNew ? '+5 נקודות 😴' : 'עודכן ✓';
       document.getElementById('sleepInput').value = '';
       renderRewards(clients[idx]);
       refreshDailyLogs();
@@ -2318,6 +2322,28 @@
           msg.textContent = 'לא רשום, צור קשר עם אלמוג';
         }
       }
+    });
+
+    document.getElementById('googleSignInBtn').addEventListener('click', function () {
+      console.log('Google button clicked, firebase.auth:', typeof firebase !== 'undefined' ? typeof firebase.auth : 'firebase undefined');
+      var provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider).then(function(result) {
+        var email = result.user.email;
+        var clients = getClients();
+        var client = clients.find(function(c) { return c.email === email; });
+        if (client) {
+          if (!client.onboarded) {
+            showOnboarding(client);
+          } else {
+            currentClientEmail = client.email;
+            showPortal(client);
+          }
+        } else {
+          document.getElementById('message').textContent = 'לא רשום, צור קשר עם אלמוג';
+        }
+      }).catch(function() {
+        document.getElementById('message').textContent = 'שגיאה בהתחברות, נסה שנית';
+      });
     });
 
     let addFormSelectedGoal = null;
