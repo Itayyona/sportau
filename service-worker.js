@@ -17,10 +17,13 @@ self.addEventListener('fetch', e => {
   e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
 
-self.addEventListener('notificationclick', e => {
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SCHEDULE_NOTIF') {
+    // Intent registered; actual scheduling handled client-side via setTimeout.
+  }
+});
+
+self.addEventListener('notificationclick', function(e) {
   e.notification.close();
-  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-    if (list.length) return list[0].focus();
-    return clients.openWindow('./');
-  }));
+  e.waitUntil(clients.openWindow('/sportau/'));
 });
