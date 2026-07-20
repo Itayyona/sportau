@@ -2453,43 +2453,77 @@
     }
 
     document.getElementById('addClientFinalBtn').addEventListener('click', function() {
+      console.log('Add client triggered');
+
       const addMsg = document.getElementById('addMessage');
       const name = document.getElementById('newName').value.trim();
       const email = document.getElementById('newEmail').value.trim();
-      if (!name || !email) { addMsg.textContent = 'חסרים שם או אימייל — חזור לשלב 1'; return; }
-      const clients = getClients();
-      if (clients.some(c => c.email === email)) { addMsg.textContent = 'לקוח עם אימייל זה כבר קיים'; return; }
+      const goal = addFormSelectedGoal;
       const phone = document.getElementById('addPhone').value.trim() || null;
-      const newClient = {
-        id: Date.now(), name, email,
-        goal: addFormSelectedGoal,
-        onboarded: true,
-        joinedAt: new Date().toISOString(),
-        streak: 0, lastCheckIn: null, points: 0,
-        phone: phone, photo: addPhotoData,
-        workoutPlanFile: window._workoutPlanFile || null,
-        workoutPlanFileName: window._workoutPlanFileName || null,
-        nutritionPlanFile: window._nutritionPlanFile || null,
-        nutritionPlanFileName: window._nutritionPlanFileName || null,
-        rules: null,
-        stats: {
-          calorieMin: document.getElementById('addCalorieMin').value || '',
-          calorieMax: document.getElementById('addCalorieMax').value || '',
-        },
-        measurements: [...addPendingMeasurements],
-      };
-      clients.push(newClient);
-      saveClients(clients);
-      addMsg.textContent = 'הלקוח נוסף בהצלחה! ✓';
-      addMsg.style.color = '#c8ff00';
-      renderClientList(); renderClientStatusCards();
-      setTimeout(() => {
-        const form = document.getElementById('addClientForm');
-        if (form) form.style.display = 'none';
-        const btn = document.getElementById('showAddClientBtn');
-        if (btn) btn.textContent = '+ הוסף לקוח';
-        resetAddForm();
-      }, 1400);
+      console.log('Client data:', { name, email, goal, phone });
+
+      if (!name || !email) {
+        console.log('Validation failed: missing name or email');
+        addMsg.textContent = 'חסרים שם או אימייל — חזור לשלב 1';
+        return;
+      }
+
+      const clients = getClients();
+      console.log('Current clients array:', clients);
+
+      if (clients.some(c => c.email === email)) {
+        console.log('Validation failed: duplicate email', email);
+        addMsg.textContent = 'לקוח עם אימייל זה כבר קיים';
+        return;
+      }
+
+      try {
+        const newClient = {
+          id: Date.now(),
+          name,
+          email,
+          goal,
+          onboarded: true,
+          joinedAt: new Date().toISOString(),
+          streak: 0,
+          lastCheckIn: null,
+          points: 0,
+          phone,
+          photo: addPhotoData,
+          workoutPlanFile: window._workoutPlanFile || null,
+          workoutPlanFileName: window._workoutPlanFileName || null,
+          nutritionPlanFile: window._nutritionPlanFile || null,
+          nutritionPlanFileName: window._nutritionPlanFileName || null,
+          rules: null,
+          stats: {
+            calorieMin: document.getElementById('addCalorieMin').value || '',
+            calorieMax: document.getElementById('addCalorieMax').value || '',
+          },
+          measurements: [...addPendingMeasurements],
+        };
+        console.log('New client object:', newClient);
+
+        clients.push(newClient);
+        saveClients(clients);
+        console.log('Saved to localStorage, new clients:', getClients());
+        console.log('Firebase save attempted');
+
+        addMsg.textContent = 'הלקוח נוסף בהצלחה! ✓';
+        addMsg.style.color = '#c8ff00';
+
+        renderClientList();
+        renderClientStatusCards();
+
+        setTimeout(() => {
+          const form = document.getElementById('addClientForm');
+          if (form) form.style.display = 'none';
+          const btn = document.getElementById('showAddClientBtn');
+          if (btn) btn.textContent = '+ הוסף לקוח';
+          resetAddForm();
+        }, 1400);
+      } catch (error) {
+        console.error('Error adding client:', error);
+      }
     });
 
     // ---- renderClientStatusCards ----
