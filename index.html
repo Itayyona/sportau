@@ -738,6 +738,18 @@
           </div>
           <p class="portal-feedback" id="sleepMsg"></p>
         </div>
+        <div class="data-card" id="stepsCard" style="background:#141414;border-left:3px solid #c8ff00;border-radius:12px;padding:16px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px;">
+          <div class="portal-section-title">כמה צעדים עשית היום? 🚶</div>
+          <div id="stepsLoggedDisplay" style="display:none;align-items:center;gap:10px;">
+            <span id="stepsLoggedVal" style="font-size:1.1rem;font-weight:700;color:#c8ff00;"></span>
+            <button id="stepsEditBtn" style="background:transparent;border:1px solid #333;color:#888;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;width:auto;">ערוך</button>
+          </div>
+          <div id="stepsInputWrap" style="display:flex;flex-direction:column;gap:8px;">
+            <input type="number" id="stepsInput" placeholder="מספר צעדים" step="1" min="0" max="100000" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;direction:rtl;outline:none;">
+            <button class="btn-outline-lime" id="stepsSubmit" style="height:44px;">שמור</button>
+          </div>
+          <p class="portal-feedback" id="stepsMsg"></p>
+        </div>
         <div class="data-card" id="portalStatsCard">
           <div class="data-card-title">הנתונים שלי</div>
           <div class="stats-grid" id="portalStatsGrid"></div>
@@ -1222,10 +1234,17 @@
       window.rtdb = firebase.database();
 
       window.fbSave = function (key, val) {
-        try { window.rtdb.ref(key).set(val); } catch (e) {}
+        try {
+          var ref = window.rtdb.ref(key);
+          ref.set(val).catch(function (err) {
+            console.error('Firebase write failed for', key, err);
+          });
+        } catch (e) {
+          console.error('Firebase save error:', e);
+        }
       };
 
-      var FB_KEYS = ['clients','workouts','nutrition','waterLog','sleepLog','checkins','pointsLedger','redemptions','notes'];
+      var FB_KEYS = ['clients','workouts','nutrition','waterLog','sleepLog','stepsLog','checkins','pointsLedger','redemptions','notes'];
 
       document.addEventListener('DOMContentLoaded', function () {
         var btn = document.getElementById('submitBtn');
@@ -1337,7 +1356,7 @@
           lastCheckIn: null,
           points: 0
         });
-        localStorage.setItem('clients', JSON.stringify(clients));
+        saveClients(clients);
       }
     };
     window.seedDefaultClient();
@@ -1602,8 +1621,11 @@
       workouts.push({ clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes });
       localStorage.setItem('workouts', JSON.stringify(workouts));
       window.fbSave && window.fbSave('workouts', workouts);
-      clients[idx].points = (clients[idx].points || 0) + 25;
-      addToLedger(clients[idx].id, 'workout', 25, 'תיעוד אימון');
+      if (canAwardPoints(clients[idx].id, 'workout')) {
+        clients[idx].points = (clients[idx].points || 0) + 25;
+        addToLedger(clients[idx].id, 'workout', 25, 'תיעוד אימון');
+        markPointsAwarded(clients[idx].id, 'workout');
+      }
       saveClients(clients);
       document.getElementById('portalPoints').textContent = clients[idx].points;
       // Workout celebration
@@ -1635,8 +1657,11 @@
       nutrition.push({ clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat });
       localStorage.setItem('nutrition', JSON.stringify(nutrition));
       window.fbSave && window.fbSave('nutrition', nutrition);
-      clients[idx].points = (clients[idx].points || 0) + 5;
-      addToLedger(clients[idx].id, 'nutrition', 5, 'תיעוד תזונה');
+      if (canAwardPoints(clients[idx].id, 'nutrition')) {
+        clients[idx].points = (clients[idx].points || 0) + 5;
+        addToLedger(clients[idx].id, 'nutrition', 5, 'תיעוד תזונה');
+        markPointsAwarded(clients[idx].id, 'nutrition');
+      }
       saveClients(clients);
       document.getElementById('portalPoints').textContent = clients[idx].points;
       renderRewards(clients[idx]);
@@ -1670,6 +1695,17 @@
       } else {
         document.getElementById('sleepLoggedDisplay').style.display = 'none';
         document.getElementById('sleepInputWrap').style.display = 'flex';
+      }
+
+      const stepsLog = JSON.parse(localStorage.getItem('stepsLog') || '[]');
+      const todaySteps = stepsLog.find(e => e.clientId === client.id && e.date === today);
+      if (todaySteps) {
+        document.getElementById('stepsLoggedVal').textContent = Number(todaySteps.steps).toLocaleString() + ' צעדים 🚶';
+        document.getElementById('stepsLoggedDisplay').style.display = 'flex';
+        document.getElementById('stepsInputWrap').style.display = 'none';
+      } else {
+        document.getElementById('stepsLoggedDisplay').style.display = 'none';
+        document.getElementById('stepsInputWrap').style.display = 'flex';
       }
     }
 
@@ -1733,6 +1769,37 @@
       document.getElementById('sleepLoggedDisplay').style.display = 'none';
       document.getElementById('sleepInputWrap').style.display = 'flex';
       document.getElementById('sleepInputWrap').style.flexDirection = 'column';
+    });
+
+    document.getElementById('stepsSubmit').addEventListener('click', function() {
+      const val = parseInt(document.getElementById('stepsInput').value);
+      if (isNaN(val)) { document.getElementById('stepsMsg').textContent = 'יש להזין כמות'; return; }
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === currentClientEmail);
+      if (idx === -1) return;
+      const log = JSON.parse(localStorage.getItem('stepsLog') || '[]');
+      const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
+      const entry = { clientId: clients[idx].id, date: todayStr(), steps: val };
+      const isNew = existing < 0;
+      if (existing >= 0) log[existing] = entry; else log.push(entry);
+      localStorage.setItem('stepsLog', JSON.stringify(log));
+      window.fbSave && window.fbSave('stepsLog', log);
+      if (isNew) {
+        clients[idx].points = (clients[idx].points || 0) + 5;
+        addToLedger(clients[idx].id, 'steps', 5, 'תיעוד צעדים');
+      }
+      saveClients(clients);
+      document.getElementById('portalPoints').textContent = clients[idx].points;
+      document.getElementById('stepsMsg').textContent = isNew ? '+5 נקודות 🚶' : 'עודכן ✓';
+      document.getElementById('stepsInput').value = '';
+      renderRewards(clients[idx]);
+      refreshDailyLogs();
+    });
+
+    document.getElementById('stepsEditBtn').addEventListener('click', function() {
+      document.getElementById('stepsLoggedDisplay').style.display = 'none';
+      document.getElementById('stepsInputWrap').style.display = 'flex';
+      document.getElementById('stepsInputWrap').style.flexDirection = 'column';
     });
 
     function renderRewards(client) {
@@ -2400,6 +2467,7 @@
       const msg = document.getElementById('addMessage');
       if (!name) { msg.textContent = 'יש להזין שם'; return; }
       if (!email) { msg.textContent = 'יש להזין אימייל'; return; }
+      if (!addFormSelectedGoal) { msg.textContent = 'יש לבחור מטרה: חיטוב או מסה'; return; }
       msg.textContent = '';
       switchAddStep(2);
     });
@@ -2474,6 +2542,19 @@
       if (clients.some(c => c.email === email)) {
         console.log('Validation failed: duplicate email', email);
         addMsg.textContent = 'לקוח עם אימייל זה כבר קיים';
+        return;
+      }
+
+      const workoutFileInput = document.getElementById('workoutFileInput');
+      const nutritionFileInput = document.getElementById('nutritionFileInput');
+      const photoInput = document.getElementById('addPhoto');
+      const fileStillLoading =
+        (workoutFileInput && workoutFileInput.files.length && !window._workoutPlanFile) ||
+        (nutritionFileInput && nutritionFileInput.files.length && !window._nutritionPlanFile) ||
+        (photoInput && photoInput.files.length && !addPhotoData);
+      if (fileStillLoading) {
+        console.log('Validation failed: file still loading');
+        addMsg.textContent = 'הקובץ עדיין בטעינה, נסה שנית';
         return;
       }
 
