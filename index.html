@@ -1256,12 +1256,7 @@
 
       var FB_KEYS = ['clients','workouts','nutrition','waterLog','sleepLog','stepsLog','checkins','pointsLedger','redemptions','notes'];
 
-      document.addEventListener('DOMContentLoaded', function () {
-        var btn = document.getElementById('submitBtn');
-        var msg = document.getElementById('message');
-        if (btn) btn.disabled = true;
-        if (msg) msg.textContent = 'מתחבר...';
-
+      window.syncFromFirebase = function () {
         var pending = FB_KEYS.map(function (key) {
           return window.rtdb.ref(key).once('value').then(function (snap) {
             var val = snap.val();
@@ -1273,8 +1268,16 @@
             }
           });
         });
+        return Promise.all(pending);
+      };
 
-        Promise.all(pending)
+      document.addEventListener('DOMContentLoaded', function () {
+        var btn = document.getElementById('submitBtn');
+        var msg = document.getElementById('message');
+        if (btn) btn.disabled = true;
+        if (msg) msg.textContent = 'מתחבר...';
+
+        window.syncFromFirebase()
           .then(function () {
             if (btn) btn.disabled = false;
             if (msg) msg.textContent = '';
@@ -1285,6 +1288,26 @@
             if (msg) msg.textContent = '';
             window.seedDefaultClient && window.seedDefaultClient();
           });
+      });
+
+      window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+          // Page was restored from back-forward cache
+          // Reinitialize Firebase connection
+          if (window.rtdb) {
+            window.rtdb.goOnline();
+          }
+          // Re-sync all data from Firebase
+          if (typeof syncFromFirebase === 'function') {
+            syncFromFirebase();
+          }
+        }
+      });
+
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && window.rtdb) {
+          window.rtdb.goOnline();
+        }
       });
     })();
   </script>
