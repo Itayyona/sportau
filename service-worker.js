@@ -13,13 +13,24 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+self.addEventListener('fetch', function(e) {
+  if (e.request.mode === 'navigate') {
+    e.respondWith(caches.match(e.request).then(function(r) {
+      return r || fetch(e.request);
+    }).catch(function() {
+      return caches.match('index.html');
+    }));
+    return;
+  }
+  e.respondWith(caches.match(e.request).then(function(r) {
+    return r || fetch(e.request);
+  }));
 });
 
-self.addEventListener('message', e => {
+self.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'SCHEDULE_NOTIF') {
     // Intent registered; actual scheduling handled client-side via setTimeout.
+    e.waitUntil(Promise.resolve());
   }
 });
 
