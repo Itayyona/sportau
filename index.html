@@ -1321,7 +1321,7 @@
       });
     }
 
-    const STAFF_EMAIL = 'itayyona6@gmail.com';
+    const STAFF_EMAILS = ['itayyona6@gmail.com', 'almogxxx123@gmail.com'];
 
     function handleStaffGoogleSignIn() {
       console.log('Staff Google sign in clicked');
@@ -1333,7 +1333,7 @@
       firebase.auth().signInWithPopup(provider).then(function(result) {
         var email = result.user.email;
         console.log('Staff signed in as:', email);
-        if (email === STAFF_EMAIL) {
+        if (STAFF_EMAILS.includes(email)) {
           showAdminPanel();
         } else {
           firebase.auth().signOut();
