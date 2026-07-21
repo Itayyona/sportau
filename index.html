@@ -1353,10 +1353,10 @@
       }
       var provider = new firebase.auth.GoogleAuthProvider();
       firebase.auth().signInWithPopup(provider).then(function(result) {
-        var email = result.user.email;
+        var email = (result.user.email || '').toLowerCase();
         console.log('Signed in as:', email);
         var clients = getClients();
-        var client = clients.find(function(c) { return c.email === email; });
+        var client = clients.find(function(c) { return c.email && c.email.toLowerCase() === email; });
         if (client) {
           if (!client.onboarded) {
             showOnboarding(client);
@@ -2499,18 +2499,37 @@
           msg.textContent = 'סיסמא שגויה';
         }
       } else {
-        const email = document.getElementById('emailInput').value.trim();
-        const clients = getClients();
-        const client = clients.find(c => c.email === email);
-        if (client) {
+        const email = document.getElementById('emailInput').value.trim().toLowerCase();
+        if (!email) return;
+
+        msg.textContent = 'מחפש...';
+
+        const findByEmail = list => list.find(c => c.email && c.email.toLowerCase() === email);
+        const handleClient = client => {
+          if (!client) {
+            msg.textContent = 'לא רשום, צור קשר עם אלמוג';
+            return;
+          }
+          currentClientEmail = client.email;
           if (!client.onboarded) {
             showOnboarding(client);
           } else {
-            currentClientEmail = client.email;
             showPortal(client);
           }
+        };
+
+        if (window.rtdb) {
+          window.rtdb.ref('clients').once('value').then(function (snapshot) {
+            const firebaseClients = snapshot.val() || [];
+            const clientsArray = Array.isArray(firebaseClients) ? firebaseClients : Object.values(firebaseClients);
+            localStorage.setItem('clients', JSON.stringify(clientsArray));
+            handleClient(findByEmail(clientsArray));
+          }).catch(function (err) {
+            console.error('Firebase lookup failed:', err);
+            handleClient(findByEmail(getClients()));
+          });
         } else {
-          msg.textContent = 'לא רשום, צור קשר עם אלמוג';
+          handleClient(findByEmail(getClients()));
         }
       }
     });
@@ -2622,7 +2641,7 @@
 
       const addMsg = document.getElementById('addMessage');
       const name = document.getElementById('newName').value.trim();
-      const email = document.getElementById('newEmail').value.trim();
+      const email = document.getElementById('newEmail').value.trim().toLowerCase();
       const goal = addFormSelectedGoal;
       const phone = document.getElementById('addPhone').value.trim() || null;
       console.log('Client data:', { name, email, goal, phone });
@@ -2636,7 +2655,7 @@
       const clients = getClients();
       console.log('Current clients array:', clients);
 
-      if (clients.some(c => c.email === email)) {
+      if (clients.some(c => c.email && c.email.toLowerCase() === email)) {
         console.log('Validation failed: duplicate email', email);
         addMsg.textContent = 'לקוח עם אימייל זה כבר קיים';
         return;
