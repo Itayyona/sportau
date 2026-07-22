@@ -1255,6 +1255,13 @@
         }
       };
 
+      window.normalizeFirebaseArray = function (val) {
+        if (!val) return [];
+        if (Array.isArray(val)) return val.filter(Boolean);
+        // Firebase may return object with numeric keys
+        return Object.values(val).filter(Boolean);
+      };
+
       var FB_KEYS = ['clients','workouts','nutrition','waterLog','sleepLog','stepsLog','checkins','pointsLedger','redemptions','notes'];
 
       window.syncFromFirebase = function () {
@@ -1262,6 +1269,7 @@
           return window.rtdb.ref(key).once('value').then(function (snap) {
             var val = snap.val();
             if (val !== null) {
+              if (key === 'clients') val = window.normalizeFirebaseArray(val);
               console.log('Loaded from Firebase:', key, Array.isArray(val) ? val.length + ' items' : val);
               localStorage.setItem(key, JSON.stringify(val));
             } else {
@@ -2034,7 +2042,7 @@
       if (window.rtdb) {
         window.rtdb.ref('clients').once('value').then(function (snap) {
           const existing = snap.val();
-          const existingCount = Array.isArray(existing) ? existing.length : 0;
+          const existingCount = normalizeFirebaseArray(existing).length;
           if (clients.length < existingCount) {
             console.error('ABORT: trying to save fewer clients than Firebase has. Firebase:', existingCount, 'New:', clients.length);
             return;
@@ -2531,7 +2539,7 @@
         if (window.rtdb) {
           window.rtdb.ref('clients').once('value').then(function (snapshot) {
             const firebaseClients = snapshot.val() || [];
-            const clientsArray = Array.isArray(firebaseClients) ? firebaseClients : Object.values(firebaseClients);
+            const clientsArray = normalizeFirebaseArray(firebaseClients);
             localStorage.setItem('clients', JSON.stringify(clientsArray));
             handleClient(findByEmail(clientsArray));
           }).catch(function (err) {
