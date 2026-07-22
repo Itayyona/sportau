@@ -1967,9 +1967,16 @@
           addToLedger(clients[idx].id, 'redeem', -cost, this.dataset.label);
           saveClients(clients);
           const redemptions = JSON.parse(localStorage.getItem('redemptions') || '[]');
-          redemptions.push({ clientId: clients[idx].id, clientName: clients[idx].name, reward: this.dataset.label, date: todayStr(), status: 'pending' });
+          const newRedemption = { clientId: clients[idx].id, clientName: clients[idx].name, reward: this.dataset.label, date: todayStr(), status: 'pending' };
+          if (window.rtdb) {
+            const pushRef = window.rtdb.ref('redemptions').push();
+            newRedemption.fbKey = pushRef.key;
+            pushRef.set(newRedemption).catch(function (err) {
+              console.error('Firebase redemptions write failed:', err);
+            });
+          }
+          redemptions.push(newRedemption);
           localStorage.setItem('redemptions', JSON.stringify(redemptions));
-          window.fbSave && window.fbSave('redemptions', redemptions);
           document.getElementById('portalPoints').textContent = clients[idx].points;
           document.getElementById('rewardsMsg').textContent = 'הבקשה נשלחה! 🎉';
           renderRewards(clients[idx]);
@@ -1991,14 +1998,25 @@
           <div style="font-weight:bold;">${r.clientName}</div>
           <div>${r.reward}</div>
           <div class="redemption-meta">${r.date}</div>
-          <button class="btn-done" data-idx="${r._idx}">בוצע ✓</button>
+          <button class="btn-done" data-idx="${r._idx}" data-fbkey="${r.fbKey || ''}">בוצע ✓</button>
         </div>`).join('');
       queue.querySelectorAll('.btn-done').forEach(btn => {
         btn.addEventListener('click', function () {
           const redemptions2 = JSON.parse(localStorage.getItem('redemptions') || '[]');
           redemptions2[Number(this.dataset.idx)].status = 'completed';
           localStorage.setItem('redemptions', JSON.stringify(redemptions2));
-          window.fbSave && window.fbSave('redemptions', redemptions2);
+          const fbKey = this.dataset.fbkey;
+          if (window.rtdb && fbKey) {
+            // Targeted update -- only touches this one redemption record
+            window.rtdb.ref('redemptions/' + fbKey).update({ status: 'completed' }).catch(function (err) {
+              console.error('Firebase redemptions update failed:', err);
+            });
+          } else {
+            // Legacy redemption created before per-record keys existed --
+            // fall back to a full-collection overwrite so it can still be
+            // marked done.
+            window.fbSave && window.fbSave('redemptions', redemptions2);
+          }
           renderRedemptions();
         });
       });
