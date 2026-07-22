@@ -1646,61 +1646,63 @@
     }
 
     document.getElementById('checkinBtn').addEventListener('click', function () {
-      const clients = getClients();
-      const idx = clients.findIndex(c => c.email === currentClientEmail);
-      if (idx === -1) return;
-      clients[idx].lastCheckIn = todayStr();
-      clients[idx].streak = (clients[idx].streak || 0) + 1;
-      const streak = clients[idx].streak;
-      let bonusMsg = '';
-      const streakMilestones = { 7: 100, 14: 200, 21: 300, 30: 500 };
-      if (canAwardPoints(clients[idx].id, 'checkin')) {
-        clients[idx].points = (clients[idx].points || 0) + 20;
-        addToLedger(clients[idx].id, 'checkin', 20, "צ'ק אין יומי");
-        markPointsAwarded(clients[idx].id, 'checkin');
-        if (streakMilestones[streak]) {
-          const bonus = streakMilestones[streak];
-          clients[idx].points += bonus;
-          addToLedger(clients[idx].id, 'bonus', bonus, `בונוס סטריק ${streak} ימים 🔥`);
-          bonusMsg = ` +${bonus} בונוס ${streak} ימים 🔥`;
+      const btn = this;
+      withFreshClients(function (clients) {
+        const idx = clients.findIndex(c => c.email === currentClientEmail);
+        if (idx === -1) return;
+        clients[idx].lastCheckIn = todayStr();
+        clients[idx].streak = (clients[idx].streak || 0) + 1;
+        const streak = clients[idx].streak;
+        let bonusMsg = '';
+        const streakMilestones = { 7: 100, 14: 200, 21: 300, 30: 500 };
+        if (canAwardPoints(clients[idx].id, 'checkin')) {
+          clients[idx].points = (clients[idx].points || 0) + 20;
+          addToLedger(clients[idx].id, 'checkin', 20, "צ'ק אין יומי");
+          markPointsAwarded(clients[idx].id, 'checkin');
+          if (streakMilestones[streak]) {
+            const bonus = streakMilestones[streak];
+            clients[idx].points += bonus;
+            addToLedger(clients[idx].id, 'bonus', bonus, `בונוס סטריק ${streak} ימים 🔥`);
+            bonusMsg = ` +${bonus} בונוס ${streak} ימים 🔥`;
+          }
         }
-      }
-      saveClients(clients);
-      const checkins = JSON.parse(localStorage.getItem('checkins') || '[]');
-      const newCheckin = { clientId: clients[idx].id, date: todayStr() };
-      checkins.push(newCheckin);
-      localStorage.setItem('checkins', JSON.stringify(checkins));
-      if (window.rtdb) {
-        // Use date as the Firebase key so same-day checkins overwrite
-        var checkinDayKey = todayStr().replace(/\//g, '-');
-        window.rtdb.ref('checkins/' + clients[idx].id + '_' + checkinDayKey).set(newCheckin).catch(function (err) {
-          console.error('Firebase checkins write failed:', err);
-        });
-      }
-      this.disabled = true;
-      document.getElementById('portalStreak').textContent = streak;
-      document.getElementById('portalPoints').textContent = clients[idx].points;
-      document.getElementById('checkinMsg').textContent = 'כל הכבוד! +20 נקודות' + bonusMsg;
+        saveClients(clients);
+        const checkins = JSON.parse(localStorage.getItem('checkins') || '[]');
+        const newCheckin = { clientId: clients[idx].id, date: todayStr() };
+        checkins.push(newCheckin);
+        localStorage.setItem('checkins', JSON.stringify(checkins));
+        if (window.rtdb) {
+          // Use date as the Firebase key so same-day checkins overwrite
+          var checkinDayKey = todayStr().replace(/\//g, '-');
+          window.rtdb.ref('checkins/' + clients[idx].id + '_' + checkinDayKey).set(newCheckin).catch(function (err) {
+            console.error('Firebase checkins write failed:', err);
+          });
+        }
+        btn.disabled = true;
+        document.getElementById('portalStreak').textContent = streak;
+        document.getElementById('portalPoints').textContent = clients[idx].points;
+        document.getElementById('checkinMsg').textContent = 'כל הכבוד! +20 נקודות' + bonusMsg;
 
-      renderRewards(clients[idx]);
-      // Check-in celebration
-      const celebEl = document.getElementById('checkinCelebration');
-      const confettiEl = document.getElementById('confettiWrap');
-      document.getElementById('celebStreakNum').textContent = streak;
-      document.getElementById('celebName').textContent = 'כל הכבוד ' + clients[idx].name + '!';
-      confettiEl.innerHTML = '';
-      const cColors = ['#c8ff00','#ff6b6b','#4ecdc4','#ffd166','#ffffff'];
-      for (let ci = 0; ci < 40; ci++) {
-        const dot = document.createElement('div');
-        dot.className = 'confetti-dot';
-        dot.style.left = (Math.random() * 100) + '%';
-        dot.style.background = cColors[Math.floor(Math.random() * cColors.length)];
-        dot.style.animationDuration = (1.5 + Math.random() * 2) + 's';
-        dot.style.animationDelay = (Math.random() * 0.8) + 's';
-        confettiEl.appendChild(dot);
-      }
-      celebEl.classList.add('show');
-      setTimeout(() => celebEl.classList.remove('show'), 2500);
+        renderRewards(clients[idx]);
+        // Check-in celebration
+        const celebEl = document.getElementById('checkinCelebration');
+        const confettiEl = document.getElementById('confettiWrap');
+        document.getElementById('celebStreakNum').textContent = streak;
+        document.getElementById('celebName').textContent = 'כל הכבוד ' + clients[idx].name + '!';
+        confettiEl.innerHTML = '';
+        const cColors = ['#c8ff00','#ff6b6b','#4ecdc4','#ffd166','#ffffff'];
+        for (let ci = 0; ci < 40; ci++) {
+          const dot = document.createElement('div');
+          dot.className = 'confetti-dot';
+          dot.style.left = (Math.random() * 100) + '%';
+          dot.style.background = cColors[Math.floor(Math.random() * cColors.length)];
+          dot.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+          dot.style.animationDelay = (Math.random() * 0.8) + 's';
+          confettiEl.appendChild(dot);
+        }
+        celebEl.classList.add('show');
+        setTimeout(() => celebEl.classList.remove('show'), 2500);
+      });
     });
 
     let selectedWorkoutTypes = [];
@@ -1728,30 +1730,31 @@
         return;
       }
       const notes = document.getElementById('workoutNotes').value.trim();
-      const clients = getClients();
-      const idx = clients.findIndex(c => c.email === currentClientEmail);
-      if (idx === -1) return;
-      const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
-      const newWorkout = { clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes };
-      workouts.push(newWorkout);
-      localStorage.setItem('workouts', JSON.stringify(workouts));
-      window.fbAppend('workouts', newWorkout);
-      if (canAwardPoints(clients[idx].id, 'workout')) {
-        clients[idx].points = (clients[idx].points || 0) + 25;
-        addToLedger(clients[idx].id, 'workout', 25, 'תיעוד אימון');
-        markPointsAwarded(clients[idx].id, 'workout');
-      }
-      saveClients(clients);
-      document.getElementById('portalPoints').textContent = clients[idx].points;
-      // Workout celebration
-      const wCelebEl = document.getElementById('workoutCelebration');
-      document.getElementById('wCelebName').textContent = 'כל הכבוד ' + clients[idx].name + '!';
-      document.getElementById('wCelebType').textContent = selectedWorkoutTypes.join(' + ');
-      wCelebEl.classList.add('show');
-      setTimeout(() => wCelebEl.classList.remove('show'), 1500);
-      renderRewards(clients[idx]);
-      selectedWorkoutTypes = [];
-      refreshWorkoutState(clients[idx]);
+      withFreshClients(function (clients) {
+        const idx = clients.findIndex(c => c.email === currentClientEmail);
+        if (idx === -1) return;
+        const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+        const newWorkout = { clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes };
+        workouts.push(newWorkout);
+        localStorage.setItem('workouts', JSON.stringify(workouts));
+        window.fbAppend('workouts', newWorkout);
+        if (canAwardPoints(clients[idx].id, 'workout')) {
+          clients[idx].points = (clients[idx].points || 0) + 25;
+          addToLedger(clients[idx].id, 'workout', 25, 'תיעוד אימון');
+          markPointsAwarded(clients[idx].id, 'workout');
+        }
+        saveClients(clients);
+        document.getElementById('portalPoints').textContent = clients[idx].points;
+        // Workout celebration
+        const wCelebEl = document.getElementById('workoutCelebration');
+        document.getElementById('wCelebName').textContent = 'כל הכבוד ' + clients[idx].name + '!';
+        document.getElementById('wCelebType').textContent = selectedWorkoutTypes.join(' + ');
+        wCelebEl.classList.add('show');
+        setTimeout(() => wCelebEl.classList.remove('show'), 1500);
+        renderRewards(clients[idx]);
+        selectedWorkoutTypes = [];
+        refreshWorkoutState(clients[idx]);
+      });
     });
 
     document.getElementById('nutritionSubmit').addEventListener('click', function () {
@@ -1765,23 +1768,24 @@
         nMsgEl.textContent = 'יש להזין קלוריות';
         return;
       }
-      const clients = getClients();
-      const idx = clients.findIndex(c => c.email === currentClientEmail);
-      if (idx === -1) return;
-      const nutrition = JSON.parse(localStorage.getItem('nutrition') || '[]');
-      const newNutrition = { clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat };
-      nutrition.push(newNutrition);
-      localStorage.setItem('nutrition', JSON.stringify(nutrition));
-      window.fbAppend('nutrition', newNutrition);
-      if (canAwardPoints(clients[idx].id, 'nutrition')) {
-        clients[idx].points = (clients[idx].points || 0) + 5;
-        addToLedger(clients[idx].id, 'nutrition', 5, 'תיעוד תזונה');
-        markPointsAwarded(clients[idx].id, 'nutrition');
-      }
-      saveClients(clients);
-      document.getElementById('portalPoints').textContent = clients[idx].points;
-      renderRewards(clients[idx]);
-      refreshNutritionState(clients[idx]);
+      withFreshClients(function (clients) {
+        const idx = clients.findIndex(c => c.email === currentClientEmail);
+        if (idx === -1) return;
+        const nutrition = JSON.parse(localStorage.getItem('nutrition') || '[]');
+        const newNutrition = { clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat };
+        nutrition.push(newNutrition);
+        localStorage.setItem('nutrition', JSON.stringify(nutrition));
+        window.fbAppend('nutrition', newNutrition);
+        if (canAwardPoints(clients[idx].id, 'nutrition')) {
+          clients[idx].points = (clients[idx].points || 0) + 5;
+          addToLedger(clients[idx].id, 'nutrition', 5, 'תיעוד תזונה');
+          markPointsAwarded(clients[idx].id, 'nutrition');
+        }
+        saveClients(clients);
+        document.getElementById('portalPoints').textContent = clients[idx].points;
+        renderRewards(clients[idx]);
+        refreshNutritionState(clients[idx]);
+      });
     });
 
     // ---- Water / Sleep logging ----
@@ -1828,32 +1832,33 @@
     document.getElementById('waterSubmit').addEventListener('click', function() {
       const val = parseFloat(document.getElementById('waterInput').value);
       if (isNaN(val)) { document.getElementById('waterMsg').textContent = 'יש להזין כמות'; return; }
-      const clients = getClients();
-      const idx = clients.findIndex(c => c.email === currentClientEmail);
-      if (idx === -1) return;
-      const log = JSON.parse(localStorage.getItem('waterLog') || '[]');
-      const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
-      const newWater = { clientId: clients[idx].id, date: todayStr(), liters: val };
-      const isNew = existing < 0;
-      if (existing >= 0) log[existing] = newWater; else log.push(newWater);
-      localStorage.setItem('waterLog', JSON.stringify(log));
-      if (window.rtdb) {
-        // Use date as the Firebase key so same-day edits overwrite
-        var waterDayKey = todayStr().replace(/\//g, '-');
-        window.rtdb.ref('waterLog/' + clients[idx].id + '_' + waterDayKey).set(newWater).catch(function (err) {
-          console.error('Firebase waterLog write failed:', err);
-        });
-      }
-      if (isNew) {
-        clients[idx].points = (clients[idx].points || 0) + 5;
-        addToLedger(clients[idx].id, 'water', 5, 'תיעוד מים');
-      }
-      saveClients(clients);
-      document.getElementById('portalPoints').textContent = clients[idx].points;
-      document.getElementById('waterMsg').textContent = isNew ? '+5 נקודות 💧' : 'עודכן ✓';
-      document.getElementById('waterInput').value = '';
-      renderRewards(clients[idx]);
-      refreshDailyLogs();
+      withFreshClients(function (clients) {
+        const idx = clients.findIndex(c => c.email === currentClientEmail);
+        if (idx === -1) return;
+        const log = JSON.parse(localStorage.getItem('waterLog') || '[]');
+        const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
+        const newWater = { clientId: clients[idx].id, date: todayStr(), liters: val };
+        const isNew = existing < 0;
+        if (existing >= 0) log[existing] = newWater; else log.push(newWater);
+        localStorage.setItem('waterLog', JSON.stringify(log));
+        if (window.rtdb) {
+          // Use date as the Firebase key so same-day edits overwrite
+          var waterDayKey = todayStr().replace(/\//g, '-');
+          window.rtdb.ref('waterLog/' + clients[idx].id + '_' + waterDayKey).set(newWater).catch(function (err) {
+            console.error('Firebase waterLog write failed:', err);
+          });
+        }
+        if (isNew) {
+          clients[idx].points = (clients[idx].points || 0) + 5;
+          addToLedger(clients[idx].id, 'water', 5, 'תיעוד מים');
+        }
+        saveClients(clients);
+        document.getElementById('portalPoints').textContent = clients[idx].points;
+        document.getElementById('waterMsg').textContent = isNew ? '+5 נקודות 💧' : 'עודכן ✓';
+        document.getElementById('waterInput').value = '';
+        renderRewards(clients[idx]);
+        refreshDailyLogs();
+      });
     });
 
     document.getElementById('waterEditBtn').addEventListener('click', function() {
@@ -1865,32 +1870,33 @@
     document.getElementById('sleepSubmit').addEventListener('click', function() {
       const val = parseFloat(document.getElementById('sleepInput').value);
       if (isNaN(val)) { document.getElementById('sleepMsg').textContent = 'יש להזין כמות'; return; }
-      const clients = getClients();
-      const idx = clients.findIndex(c => c.email === currentClientEmail);
-      if (idx === -1) return;
-      const log = JSON.parse(localStorage.getItem('sleepLog') || '[]');
-      const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
-      const newSleep = { clientId: clients[idx].id, date: todayStr(), hours: val };
-      const isNew = existing < 0;
-      if (existing >= 0) log[existing] = newSleep; else log.push(newSleep);
-      localStorage.setItem('sleepLog', JSON.stringify(log));
-      if (window.rtdb) {
-        // Use date as the Firebase key so same-day edits overwrite
-        var sleepDayKey = todayStr().replace(/\//g, '-');
-        window.rtdb.ref('sleepLog/' + clients[idx].id + '_' + sleepDayKey).set(newSleep).catch(function (err) {
-          console.error('Firebase sleepLog write failed:', err);
-        });
-      }
-      if (isNew) {
-        clients[idx].points = (clients[idx].points || 0) + 5;
-        addToLedger(clients[idx].id, 'sleep', 5, 'תיעוד שינה');
-      }
-      saveClients(clients);
-      document.getElementById('portalPoints').textContent = clients[idx].points;
-      document.getElementById('sleepMsg').textContent = isNew ? '+5 נקודות 😴' : 'עודכן ✓';
-      document.getElementById('sleepInput').value = '';
-      renderRewards(clients[idx]);
-      refreshDailyLogs();
+      withFreshClients(function (clients) {
+        const idx = clients.findIndex(c => c.email === currentClientEmail);
+        if (idx === -1) return;
+        const log = JSON.parse(localStorage.getItem('sleepLog') || '[]');
+        const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
+        const newSleep = { clientId: clients[idx].id, date: todayStr(), hours: val };
+        const isNew = existing < 0;
+        if (existing >= 0) log[existing] = newSleep; else log.push(newSleep);
+        localStorage.setItem('sleepLog', JSON.stringify(log));
+        if (window.rtdb) {
+          // Use date as the Firebase key so same-day edits overwrite
+          var sleepDayKey = todayStr().replace(/\//g, '-');
+          window.rtdb.ref('sleepLog/' + clients[idx].id + '_' + sleepDayKey).set(newSleep).catch(function (err) {
+            console.error('Firebase sleepLog write failed:', err);
+          });
+        }
+        if (isNew) {
+          clients[idx].points = (clients[idx].points || 0) + 5;
+          addToLedger(clients[idx].id, 'sleep', 5, 'תיעוד שינה');
+        }
+        saveClients(clients);
+        document.getElementById('portalPoints').textContent = clients[idx].points;
+        document.getElementById('sleepMsg').textContent = isNew ? '+5 נקודות 😴' : 'עודכן ✓';
+        document.getElementById('sleepInput').value = '';
+        renderRewards(clients[idx]);
+        refreshDailyLogs();
+      });
     });
 
     document.getElementById('sleepEditBtn').addEventListener('click', function() {
@@ -1902,32 +1908,33 @@
     document.getElementById('stepsSubmit').addEventListener('click', function() {
       const val = parseInt(document.getElementById('stepsInput').value);
       if (isNaN(val)) { document.getElementById('stepsMsg').textContent = 'יש להזין כמות'; return; }
-      const clients = getClients();
-      const idx = clients.findIndex(c => c.email === currentClientEmail);
-      if (idx === -1) return;
-      const log = JSON.parse(localStorage.getItem('stepsLog') || '[]');
-      const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
-      const newSteps = { clientId: clients[idx].id, date: todayStr(), steps: val };
-      const isNew = existing < 0;
-      if (existing >= 0) log[existing] = newSteps; else log.push(newSteps);
-      localStorage.setItem('stepsLog', JSON.stringify(log));
-      if (window.rtdb) {
-        // Use date as the Firebase key so same-day edits overwrite
-        var stepsDayKey = todayStr().replace(/\//g, '-');
-        window.rtdb.ref('stepsLog/' + clients[idx].id + '_' + stepsDayKey).set(newSteps).catch(function (err) {
-          console.error('Firebase stepsLog write failed:', err);
-        });
-      }
-      if (isNew) {
-        clients[idx].points = (clients[idx].points || 0) + 5;
-        addToLedger(clients[idx].id, 'steps', 5, 'תיעוד צעדים');
-      }
-      saveClients(clients);
-      document.getElementById('portalPoints').textContent = clients[idx].points;
-      document.getElementById('stepsMsg').textContent = isNew ? '+5 נקודות 🚶' : 'עודכן ✓';
-      document.getElementById('stepsInput').value = '';
-      renderRewards(clients[idx]);
-      refreshDailyLogs();
+      withFreshClients(function (clients) {
+        const idx = clients.findIndex(c => c.email === currentClientEmail);
+        if (idx === -1) return;
+        const log = JSON.parse(localStorage.getItem('stepsLog') || '[]');
+        const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
+        const newSteps = { clientId: clients[idx].id, date: todayStr(), steps: val };
+        const isNew = existing < 0;
+        if (existing >= 0) log[existing] = newSteps; else log.push(newSteps);
+        localStorage.setItem('stepsLog', JSON.stringify(log));
+        if (window.rtdb) {
+          // Use date as the Firebase key so same-day edits overwrite
+          var stepsDayKey = todayStr().replace(/\//g, '-');
+          window.rtdb.ref('stepsLog/' + clients[idx].id + '_' + stepsDayKey).set(newSteps).catch(function (err) {
+            console.error('Firebase stepsLog write failed:', err);
+          });
+        }
+        if (isNew) {
+          clients[idx].points = (clients[idx].points || 0) + 5;
+          addToLedger(clients[idx].id, 'steps', 5, 'תיעוד צעדים');
+        }
+        saveClients(clients);
+        document.getElementById('portalPoints').textContent = clients[idx].points;
+        document.getElementById('stepsMsg').textContent = isNew ? '+5 נקודות 🚶' : 'עודכן ✓';
+        document.getElementById('stepsInput').value = '';
+        renderRewards(clients[idx]);
+        refreshDailyLogs();
+      });
     });
 
     document.getElementById('stepsEditBtn').addEventListener('click', function() {
@@ -2054,14 +2061,15 @@
       if (!selectedGoalChange) { msg.textContent = 'יש לבחור מטרה'; return; }
       const fileInput = document.getElementById('clientFileChange');
       const filename = fileInput.files.length > 0 ? fileInput.files[0].name : null;
-      const clients = getClients();
-      const idx = clients.findIndex(c => c.email === currentClientEmail);
-      if (idx !== -1) {
-        clients[idx].goal = selectedGoalChange;
-        if (filename) clients[idx].filename = filename;
-        saveClients(clients);
-        showPortal(clients[idx]);
-      }
+      withFreshClients(function (clients) {
+        const idx = clients.findIndex(c => c.email === currentClientEmail);
+        if (idx !== -1) {
+          clients[idx].goal = selectedGoalChange;
+          if (filename) clients[idx].filename = filename;
+          saveClients(clients);
+          showPortal(clients[idx]);
+        }
+      });
     });
 
     function showOnboarding(client) {
@@ -2077,20 +2085,40 @@
       const fileInput = document.getElementById('clientFile');
       const filename = fileInput.files.length > 0 ? fileInput.files[0].name : null;
       const email = document.getElementById('emailInput').value.trim();
-      const clients = getClients();
-      const idx = clients.findIndex(c => c.email === email);
-      if (idx !== -1) {
-        clients[idx].goal = selectedGoal;
-        clients[idx].filename = filename;
-        clients[idx].onboarded = true;
-        saveClients(clients);
-      }
-      const clients2 = getClients();
-      showPortal(clients2[clients2.findIndex(c => c.email === currentClientEmail)]);
+      withFreshClients(function (clients) {
+        const idx = clients.findIndex(c => c.email === email);
+        if (idx !== -1) {
+          clients[idx].goal = selectedGoal;
+          clients[idx].filename = filename;
+          clients[idx].onboarded = true;
+          saveClients(clients);
+        }
+        const clients2 = getClients();
+        showPortal(clients2[clients2.findIndex(c => c.email === currentClientEmail)]);
+      });
     });
 
     function getClients() {
       return JSON.parse(localStorage.getItem('clients') || '[]');
+    }
+
+    // Fetches the latest clients array from Firebase before running a
+    // mutation, so a stale local cache can't clobber another device's
+    // concurrent edit to the same client. Falls back to local data if
+    // Firebase is unavailable or the fetch fails, so actions still work
+    // offline.
+    function withFreshClients(mutateFn) {
+      if (!window.rtdb) { mutateFn(getClients()); return; }
+      window.rtdb.ref('clients').once('value').then(function (snap) {
+        const freshClients = normalizeFirebaseArray(snap.val());
+        if (freshClients.length > 0) {
+          localStorage.setItem('clients', JSON.stringify(freshClients));
+        }
+        mutateFn(getClients());
+      }).catch(function (err) {
+        console.error('Fresh clients fetch failed, using local data:', err);
+        mutateFn(getClients());
+      });
     }
 
     function saveClients(clients, allowShrink) {
@@ -2307,21 +2335,22 @@
       const reason = document.getElementById('dvPointsReason').value.trim();
       if (!amount || amount < 1) { document.getElementById('dvPointsMsg').textContent = 'יש להזין כמות'; return; }
       if (!reason) { document.getElementById('dvPointsMsg').textContent = 'יש להזין סיבה'; return; }
-      const clients = getClients();
-      const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
-      if (idx === -1) return;
-      clients[idx].points = (clients[idx].points || 0) + amount;
-      saveClients(clients);
-      const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
-      const newEntry = { clientId: currentDeepViewClientId, type: 'grant', amount, reason, date: todayStr(), grantedAt: new Date().toISOString() };
-      ledger.push(newEntry);
-      localStorage.setItem('pointsLedger', JSON.stringify(ledger));
-      window.fbAppend('pointsLedger', newEntry);
-      document.getElementById('dvPoints').textContent = clients[idx].points;
-      document.getElementById('dvPointsAmount').value = '';
-      document.getElementById('dvPointsReason').value = '';
-      document.getElementById('dvPointsMsg').textContent = `+${amount} נקודות הוענקו ✓`;
-      renderDvPointsHistory(currentDeepViewClientId);
+      withFreshClients(function (clients) {
+        const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
+        if (idx === -1) return;
+        clients[idx].points = (clients[idx].points || 0) + amount;
+        saveClients(clients);
+        const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
+        const newEntry = { clientId: currentDeepViewClientId, type: 'grant', amount, reason, date: todayStr(), grantedAt: new Date().toISOString() };
+        ledger.push(newEntry);
+        localStorage.setItem('pointsLedger', JSON.stringify(ledger));
+        window.fbAppend('pointsLedger', newEntry);
+        document.getElementById('dvPoints').textContent = clients[idx].points;
+        document.getElementById('dvPointsAmount').value = '';
+        document.getElementById('dvPointsReason').value = '';
+        document.getElementById('dvPointsMsg').textContent = `+${amount} נקודות הוענקו ✓`;
+        renderDvPointsHistory(currentDeepViewClientId);
+      });
     });
 
     document.getElementById('dvPointsDeductBtn').addEventListener('click', function () {
@@ -2329,21 +2358,22 @@
       const reason = document.getElementById('dvPointsReason').value.trim();
       if (!amount || amount < 1) { document.getElementById('dvPointsMsg').textContent = 'יש להזין כמות'; return; }
       if (!reason) { document.getElementById('dvPointsMsg').textContent = 'יש להזין סיבה'; return; }
-      const clients = getClients();
-      const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
-      if (idx === -1) return;
-      clients[idx].points = Math.max(0, (clients[idx].points || 0) - amount);
-      saveClients(clients);
-      const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
-      const newEntry = { clientId: currentDeepViewClientId, type: 'deduct', amount: -amount, reason, date: todayStr(), grantedAt: new Date().toISOString() };
-      ledger.push(newEntry);
-      localStorage.setItem('pointsLedger', JSON.stringify(ledger));
-      window.fbAppend('pointsLedger', newEntry);
-      document.getElementById('dvPoints').textContent = clients[idx].points;
-      document.getElementById('dvPointsAmount').value = '';
-      document.getElementById('dvPointsReason').value = '';
-      document.getElementById('dvPointsMsg').textContent = `−${amount} נקודות הורדו ✓`;
-      renderDvPointsHistory(currentDeepViewClientId);
+      withFreshClients(function (clients) {
+        const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
+        if (idx === -1) return;
+        clients[idx].points = Math.max(0, (clients[idx].points || 0) - amount);
+        saveClients(clients);
+        const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
+        const newEntry = { clientId: currentDeepViewClientId, type: 'deduct', amount: -amount, reason, date: todayStr(), grantedAt: new Date().toISOString() };
+        ledger.push(newEntry);
+        localStorage.setItem('pointsLedger', JSON.stringify(ledger));
+        window.fbAppend('pointsLedger', newEntry);
+        document.getElementById('dvPoints').textContent = clients[idx].points;
+        document.getElementById('dvPointsAmount').value = '';
+        document.getElementById('dvPointsReason').value = '';
+        document.getElementById('dvPointsMsg').textContent = `−${amount} נקודות הורדו ✓`;
+        renderDvPointsHistory(currentDeepViewClientId);
+      });
     });
 
     let portalWeightChart = null, portalFatChart = null;
