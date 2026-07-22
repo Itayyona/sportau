@@ -2037,19 +2037,26 @@
       return JSON.parse(localStorage.getItem('clients') || '[]');
     }
 
-    function saveClients(clients) {
+    function saveClients(clients, allowShrink) {
       localStorage.setItem('clients', JSON.stringify(clients));
-      if (window.rtdb) {
-        window.rtdb.ref('clients').once('value').then(function (snap) {
-          const existing = snap.val();
-          const existingCount = normalizeFirebaseArray(existing).length;
-          if (clients.length < existingCount) {
-            console.error('ABORT: trying to save fewer clients than Firebase has. Firebase:', existingCount, 'New:', clients.length);
-            return;
-          }
-          window.fbSave && window.fbSave('clients', clients);
-        });
+      if (!window.rtdb) return;
+      if (allowShrink) {
+        // Deletion or intentional shrink — push directly
+        window.fbSave('clients', clients);
+        return;
       }
+      // Safety check — only block if shrinking without permission
+      window.rtdb.ref('clients').once('value').then(function (snap) {
+        const existing = snap.val();
+        const existingCount = existing ? normalizeFirebaseArray(existing).length : 0;
+        if (clients.length < existingCount) {
+          console.error('ABORT: trying to save fewer clients. Firebase:', existingCount, 'New:', clients.length);
+          return;
+        }
+        window.fbSave('clients', clients);
+      }).catch(function () {
+        window.fbSave('clients', clients);
+      });
     }
 
     function renderClientList() {
@@ -2092,7 +2099,7 @@
           e.stopPropagation();
           if (!confirm('האם אתה בטוח?')) return;
           const id = Number(this.dataset.id);
-          saveClients(getClients().filter(c => c.id !== id));
+          saveClients(getClients().filter(c => c.id !== id), true);
           renderClientList();
         });
       });
