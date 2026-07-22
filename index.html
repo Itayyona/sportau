@@ -2539,6 +2539,10 @@
         if (window.rtdb) {
           window.rtdb.ref('clients').once('value').then(function (snapshot) {
             const firebaseClients = snapshot.val() || [];
+            console.log('Raw Firebase clients:', firebaseClients);
+            console.log('Type:', typeof firebaseClients);
+            console.log('Is array:', Array.isArray(firebaseClients));
+            console.log('Keys:', Object.keys(firebaseClients || {}).length);
             const clientsArray = normalizeFirebaseArray(firebaseClients);
             localStorage.setItem('clients', JSON.stringify(clientsArray));
             handleClient(findByEmail(clientsArray));
