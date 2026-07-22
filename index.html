@@ -1670,7 +1670,13 @@
       const newCheckin = { clientId: clients[idx].id, date: todayStr() };
       checkins.push(newCheckin);
       localStorage.setItem('checkins', JSON.stringify(checkins));
-      window.fbAppend('checkins', newCheckin);
+      if (window.rtdb) {
+        // Use date as the Firebase key so same-day checkins overwrite
+        var checkinDayKey = todayStr().replace(/\//g, '-');
+        window.rtdb.ref('checkins/' + clients[idx].id + '_' + checkinDayKey).set(newCheckin).catch(function (err) {
+          console.error('Firebase checkins write failed:', err);
+        });
+      }
       this.disabled = true;
       document.getElementById('portalStreak').textContent = streak;
       document.getElementById('portalPoints').textContent = clients[idx].points;
@@ -1831,7 +1837,13 @@
       const isNew = existing < 0;
       if (existing >= 0) log[existing] = newWater; else log.push(newWater);
       localStorage.setItem('waterLog', JSON.stringify(log));
-      window.fbAppend('waterLog', newWater);
+      if (window.rtdb) {
+        // Use date as the Firebase key so same-day edits overwrite
+        var waterDayKey = todayStr().replace(/\//g, '-');
+        window.rtdb.ref('waterLog/' + clients[idx].id + '_' + waterDayKey).set(newWater).catch(function (err) {
+          console.error('Firebase waterLog write failed:', err);
+        });
+      }
       if (isNew) {
         clients[idx].points = (clients[idx].points || 0) + 5;
         addToLedger(clients[idx].id, 'water', 5, 'תיעוד מים');
@@ -1862,7 +1874,13 @@
       const isNew = existing < 0;
       if (existing >= 0) log[existing] = newSleep; else log.push(newSleep);
       localStorage.setItem('sleepLog', JSON.stringify(log));
-      window.fbAppend('sleepLog', newSleep);
+      if (window.rtdb) {
+        // Use date as the Firebase key so same-day edits overwrite
+        var sleepDayKey = todayStr().replace(/\//g, '-');
+        window.rtdb.ref('sleepLog/' + clients[idx].id + '_' + sleepDayKey).set(newSleep).catch(function (err) {
+          console.error('Firebase sleepLog write failed:', err);
+        });
+      }
       if (isNew) {
         clients[idx].points = (clients[idx].points || 0) + 5;
         addToLedger(clients[idx].id, 'sleep', 5, 'תיעוד שינה');
@@ -1893,7 +1911,13 @@
       const isNew = existing < 0;
       if (existing >= 0) log[existing] = newSteps; else log.push(newSteps);
       localStorage.setItem('stepsLog', JSON.stringify(log));
-      window.fbAppend('stepsLog', newSteps);
+      if (window.rtdb) {
+        // Use date as the Firebase key so same-day edits overwrite
+        var stepsDayKey = todayStr().replace(/\//g, '-');
+        window.rtdb.ref('stepsLog/' + clients[idx].id + '_' + stepsDayKey).set(newSteps).catch(function (err) {
+          console.error('Firebase stepsLog write failed:', err);
+        });
+      }
       if (isNew) {
         clients[idx].points = (clients[idx].points || 0) + 5;
         addToLedger(clients[idx].id, 'steps', 5, 'תיעוד צעדים');
