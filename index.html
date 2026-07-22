@@ -1255,6 +1255,17 @@
         }
       };
 
+      window.fbAppend = function (key, item) {
+        if (!window.rtdb) return;
+        try {
+          window.rtdb.ref(key).push(item).catch(function (err) {
+            console.error('Firebase append failed for', key, err);
+          });
+        } catch (e) {
+          console.error('Firebase append error:', e);
+        }
+      };
+
       window.normalizeFirebaseArray = function (val) {
         if (!val) return [];
         if (Array.isArray(val)) return val.filter(Boolean);
@@ -1269,7 +1280,7 @@
           return window.rtdb.ref(key).once('value').then(function (snap) {
             var val = snap.val();
             if (val !== null) {
-              if (key === 'clients') val = window.normalizeFirebaseArray(val);
+              val = window.normalizeFirebaseArray(val);
               console.log('Loaded from Firebase:', key, Array.isArray(val) ? val.length + ' items' : val);
               localStorage.setItem(key, JSON.stringify(val));
             } else {
@@ -1277,7 +1288,7 @@
             }
           });
         });
-        return Promise.all(pending);
+        return Promise.allSettled(pending);
       };
 
       // Kick off the sync immediately (this script runs before the submit
@@ -1451,7 +1462,6 @@
         saveClients(clients);
       }
     };
-    window.seedDefaultClient();
 
     const isAdmin = (function () {
       try {
@@ -1478,9 +1488,10 @@
 
     function addToLedger(clientId, type, amount, reason) {
       const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
-      ledger.push({ clientId, type, amount, reason, date: todayStr() });
+      const newEntry = { clientId, type, amount, reason, date: todayStr() };
+      ledger.push(newEntry);
       localStorage.setItem('pointsLedger', JSON.stringify(ledger));
-      window.fbSave && window.fbSave('pointsLedger', ledger);
+      window.fbAppend('pointsLedger', newEntry);
     }
 
     function canAwardPoints(clientId, action) {
@@ -1656,9 +1667,10 @@
       }
       saveClients(clients);
       const checkins = JSON.parse(localStorage.getItem('checkins') || '[]');
-      checkins.push({ clientId: clients[idx].id, date: todayStr() });
+      const newCheckin = { clientId: clients[idx].id, date: todayStr() };
+      checkins.push(newCheckin);
       localStorage.setItem('checkins', JSON.stringify(checkins));
-      window.fbSave && window.fbSave('checkins', checkins);
+      window.fbAppend('checkins', newCheckin);
       this.disabled = true;
       document.getElementById('portalStreak').textContent = streak;
       document.getElementById('portalPoints').textContent = clients[idx].points;
@@ -1714,9 +1726,10 @@
       const idx = clients.findIndex(c => c.email === currentClientEmail);
       if (idx === -1) return;
       const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
-      workouts.push({ clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes });
+      const newWorkout = { clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes };
+      workouts.push(newWorkout);
       localStorage.setItem('workouts', JSON.stringify(workouts));
-      window.fbSave && window.fbSave('workouts', workouts);
+      window.fbAppend('workouts', newWorkout);
       if (canAwardPoints(clients[idx].id, 'workout')) {
         clients[idx].points = (clients[idx].points || 0) + 25;
         addToLedger(clients[idx].id, 'workout', 25, 'תיעוד אימון');
@@ -1750,9 +1763,10 @@
       const idx = clients.findIndex(c => c.email === currentClientEmail);
       if (idx === -1) return;
       const nutrition = JSON.parse(localStorage.getItem('nutrition') || '[]');
-      nutrition.push({ clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat });
+      const newNutrition = { clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat };
+      nutrition.push(newNutrition);
       localStorage.setItem('nutrition', JSON.stringify(nutrition));
-      window.fbSave && window.fbSave('nutrition', nutrition);
+      window.fbAppend('nutrition', newNutrition);
       if (canAwardPoints(clients[idx].id, 'nutrition')) {
         clients[idx].points = (clients[idx].points || 0) + 5;
         addToLedger(clients[idx].id, 'nutrition', 5, 'תיעוד תזונה');
@@ -1813,11 +1827,11 @@
       if (idx === -1) return;
       const log = JSON.parse(localStorage.getItem('waterLog') || '[]');
       const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
-      const entry = { clientId: clients[idx].id, date: todayStr(), liters: val };
+      const newWater = { clientId: clients[idx].id, date: todayStr(), liters: val };
       const isNew = existing < 0;
-      if (existing >= 0) log[existing] = entry; else log.push(entry);
+      if (existing >= 0) log[existing] = newWater; else log.push(newWater);
       localStorage.setItem('waterLog', JSON.stringify(log));
-      window.fbSave && window.fbSave('waterLog', log);
+      window.fbAppend('waterLog', newWater);
       if (isNew) {
         clients[idx].points = (clients[idx].points || 0) + 5;
         addToLedger(clients[idx].id, 'water', 5, 'תיעוד מים');
@@ -1844,11 +1858,11 @@
       if (idx === -1) return;
       const log = JSON.parse(localStorage.getItem('sleepLog') || '[]');
       const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
-      const entry = { clientId: clients[idx].id, date: todayStr(), hours: val };
+      const newSleep = { clientId: clients[idx].id, date: todayStr(), hours: val };
       const isNew = existing < 0;
-      if (existing >= 0) log[existing] = entry; else log.push(entry);
+      if (existing >= 0) log[existing] = newSleep; else log.push(newSleep);
       localStorage.setItem('sleepLog', JSON.stringify(log));
-      window.fbSave && window.fbSave('sleepLog', log);
+      window.fbAppend('sleepLog', newSleep);
       if (isNew) {
         clients[idx].points = (clients[idx].points || 0) + 5;
         addToLedger(clients[idx].id, 'sleep', 5, 'תיעוד שינה');
@@ -1875,11 +1889,11 @@
       if (idx === -1) return;
       const log = JSON.parse(localStorage.getItem('stepsLog') || '[]');
       const existing = log.findIndex(e => e.clientId === clients[idx].id && e.date === todayStr());
-      const entry = { clientId: clients[idx].id, date: todayStr(), steps: val };
+      const newSteps = { clientId: clients[idx].id, date: todayStr(), steps: val };
       const isNew = existing < 0;
-      if (existing >= 0) log[existing] = entry; else log.push(entry);
+      if (existing >= 0) log[existing] = newSteps; else log.push(newSteps);
       localStorage.setItem('stepsLog', JSON.stringify(log));
-      window.fbSave && window.fbSave('stepsLog', log);
+      window.fbAppend('stepsLog', newSteps);
       if (isNew) {
         clients[idx].points = (clients[idx].points || 0) + 5;
         addToLedger(clients[idx].id, 'steps', 5, 'תיעוד צעדים');
@@ -2238,9 +2252,10 @@
       const content = document.getElementById('dvNoteInput').value.trim();
       if (!content) return;
       const notes = JSON.parse(localStorage.getItem('notes') || '[]');
-      notes.push({ clientId: currentDeepViewClientId, content, createdAt: new Date().toISOString() });
+      const newNote = { clientId: currentDeepViewClientId, content, createdAt: new Date().toISOString() };
+      notes.push(newNote);
       localStorage.setItem('notes', JSON.stringify(notes));
-      window.fbSave && window.fbSave('notes', notes);
+      window.fbAppend('notes', newNote);
       document.getElementById('dvNoteInput').value = '';
       renderDvNotes(currentDeepViewClientId);
     });
@@ -2256,9 +2271,10 @@
       clients[idx].points = (clients[idx].points || 0) + amount;
       saveClients(clients);
       const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
-      ledger.push({ clientId: currentDeepViewClientId, type: 'grant', amount, reason, date: todayStr(), grantedAt: new Date().toISOString() });
+      const newEntry = { clientId: currentDeepViewClientId, type: 'grant', amount, reason, date: todayStr(), grantedAt: new Date().toISOString() };
+      ledger.push(newEntry);
       localStorage.setItem('pointsLedger', JSON.stringify(ledger));
-      window.fbSave && window.fbSave('pointsLedger', ledger);
+      window.fbAppend('pointsLedger', newEntry);
       document.getElementById('dvPoints').textContent = clients[idx].points;
       document.getElementById('dvPointsAmount').value = '';
       document.getElementById('dvPointsReason').value = '';
@@ -2277,9 +2293,10 @@
       clients[idx].points = Math.max(0, (clients[idx].points || 0) - amount);
       saveClients(clients);
       const ledger = JSON.parse(localStorage.getItem('pointsLedger') || '[]');
-      ledger.push({ clientId: currentDeepViewClientId, type: 'deduct', amount: -amount, reason, date: todayStr(), grantedAt: new Date().toISOString() });
+      const newEntry = { clientId: currentDeepViewClientId, type: 'deduct', amount: -amount, reason, date: todayStr(), grantedAt: new Date().toISOString() };
+      ledger.push(newEntry);
       localStorage.setItem('pointsLedger', JSON.stringify(ledger));
-      window.fbSave && window.fbSave('pointsLedger', ledger);
+      window.fbAppend('pointsLedger', newEntry);
       document.getElementById('dvPoints').textContent = clients[idx].points;
       document.getElementById('dvPointsAmount').value = '';
       document.getElementById('dvPointsReason').value = '';
@@ -2393,6 +2410,12 @@
         const msg = document.getElementById('dvMenuMsg');
         if (msg) msg.textContent = 'נשמר ✓';
       };
+      reader.onerror = () => {
+        console.error('Failed to read nutrition file:', reader.error);
+        if (lbl) { lbl.textContent = '📁 העלא תפריט שבועי (Word)'; lbl.style.color = '#888'; }
+        const msg = document.getElementById('dvMenuMsg');
+        if (msg) msg.textContent = 'שגיאה בטעינת הקובץ, נסה שנית';
+      };
       reader.readAsDataURL(file);
     }
 
@@ -2411,6 +2434,12 @@
         saveClients(clients);
         const msg = document.getElementById('dvWorkoutPlanMsg');
         if (msg) msg.textContent = 'נשמר ✓';
+      };
+      reader.onerror = () => {
+        console.error('Failed to read workout file:', reader.error);
+        if (lbl) { lbl.textContent = '📁 העלא תוכנית אימונים (Excel)'; lbl.style.color = '#888'; }
+        const msg = document.getElementById('dvWorkoutPlanMsg');
+        if (msg) msg.textContent = 'שגיאה בטעינת הקובץ, נסה שנית';
       };
       reader.readAsDataURL(file);
     }
