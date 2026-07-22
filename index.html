@@ -1262,10 +1262,13 @@
           return window.rtdb.ref(key).once('value').then(function (snap) {
             var val = snap.val();
             if (val !== null) {
+              console.log('Loaded from Firebase:', key, Array.isArray(val) ? val.length + ' items' : val);
               localStorage.setItem(key, JSON.stringify(val));
             } else {
-              var local = localStorage.getItem(key);
-              if (local) window.fbSave(key, JSON.parse(local));
+              // Firebase has no data for this key yet
+              // Only push if we have local data AND we are on the staff panel
+              // Never push client-side localStorage to Firebase as it may be stale
+              console.log('No Firebase data for key:', key, '- keeping local only');
             }
           });
         });
