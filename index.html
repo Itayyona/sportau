@@ -1284,7 +1284,12 @@
               console.log('Loaded from Firebase:', key, Array.isArray(val) ? val.length + ' items' : val);
               localStorage.setItem(key, JSON.stringify(val));
             } else {
-              console.log('Firebase empty for:', key, '- not overwriting');
+              // Firebase confirmed this key is empty -- clear local so no
+              // stale data survives. (A failed/offline fetch never reaches
+              // this branch at all, so existing cached data is untouched
+              // when Firebase simply couldn't be reached.)
+              console.log('Firebase confirmed empty for:', key, '- clearing local');
+              localStorage.removeItem(key);
             }
           });
         });
