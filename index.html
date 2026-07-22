@@ -1265,10 +1265,7 @@
               console.log('Loaded from Firebase:', key, Array.isArray(val) ? val.length + ' items' : val);
               localStorage.setItem(key, JSON.stringify(val));
             } else {
-              // Firebase has no data for this key yet
-              // Only push if we have local data AND we are on the staff panel
-              // Never push client-side localStorage to Firebase as it may be stale
-              console.log('No Firebase data for key:', key, '- keeping local only');
+              console.log('Firebase empty for:', key, '- not overwriting');
             }
           });
         });
@@ -2034,7 +2031,17 @@
 
     function saveClients(clients) {
       localStorage.setItem('clients', JSON.stringify(clients));
-      window.fbSave && window.fbSave('clients', clients);
+      if (window.rtdb) {
+        window.rtdb.ref('clients').once('value').then(function (snap) {
+          const existing = snap.val();
+          const existingCount = Array.isArray(existing) ? existing.length : 0;
+          if (clients.length < existingCount) {
+            console.error('ABORT: trying to save fewer clients than Firebase has. Firebase:', existingCount, 'New:', clients.length);
+            return;
+          }
+          window.fbSave && window.fbSave('clients', clients);
+        });
+      }
     }
 
     function renderClientList() {
