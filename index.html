@@ -2642,11 +2642,22 @@
             return;
           }
           currentClientEmail = client.email;
-          if (!client.onboarded) {
-            showOnboarding(client);
-          } else {
-            showPortal(client);
+          const proceed = () => {
+            if (!client.onboarded) {
+              showOnboarding(client);
+            } else {
+              showPortal(client);
+            }
+          };
+          if (typeof firebase === 'undefined' || !firebase.auth) {
+            proceed();
+            return;
           }
+          firebase.auth().signInAnonymously().then(proceed).catch(function (err) {
+            // Auth failed but still show the portal/onboarding
+            console.error('Anonymous auth failed:', err);
+            proceed();
+          });
         };
 
         if (window.rtdb) {
