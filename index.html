@@ -1669,6 +1669,11 @@
       withFreshClients(function (clients) {
         const idx = clients.findIndex(c => c.email === currentClientEmail);
         if (idx === -1) return;
+        console.log('Checkin triggered for client:', clients[idx]);
+        console.log('Firebase auth user:', firebase.auth().currentUser);
+        console.log('Today string:', todayStr());
+        console.log('Day key:', todayStr().replace(/\//g, '-'));
+        console.log('Firebase ref path:', 'checkins/' + clients[idx].id + '_' + todayStr().replace(/\//g, '-'));
         clients[idx].lastCheckIn = todayStr();
         clients[idx].streak = (clients[idx].streak || 0) + 1;
         const streak = clients[idx].streak;
