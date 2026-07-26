@@ -2106,6 +2106,7 @@
       if (!selectedGoalChange) { msg.textContent = 'יש לבחור מטרה'; return; }
       const fileInput = document.getElementById('clientFileChange');
       const filename = fileInput.files.length > 0 ? fileInput.files[0].name : null;
+      ensureAuth(function () {
       withFreshClients(function (clients) {
         const idx = clients.findIndex(c => c.email === currentClientEmail);
         if (idx !== -1) {
@@ -2114,6 +2115,7 @@
           saveClients(clients);
           showPortal(clients[idx]);
         }
+      });
       });
     });
 
@@ -2130,6 +2132,7 @@
       const fileInput = document.getElementById('clientFile');
       const filename = fileInput.files.length > 0 ? fileInput.files[0].name : null;
       const email = document.getElementById('emailInput').value.trim();
+      ensureAuth(function () {
       withFreshClients(function (clients) {
         const idx = clients.findIndex(c => c.email === email);
         if (idx !== -1) {
@@ -2140,6 +2143,7 @@
         }
         const clients2 = getClients();
         showPortal(clients2[clients2.findIndex(c => c.email === currentClientEmail)]);
+      });
       });
     });
 
@@ -2380,6 +2384,7 @@
       const reason = document.getElementById('dvPointsReason').value.trim();
       if (!amount || amount < 1) { document.getElementById('dvPointsMsg').textContent = 'יש להזין כמות'; return; }
       if (!reason) { document.getElementById('dvPointsMsg').textContent = 'יש להזין סיבה'; return; }
+      ensureAuth(function () {
       withFreshClients(function (clients) {
         const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
         if (idx === -1) return;
@@ -2396,6 +2401,7 @@
         document.getElementById('dvPointsMsg').textContent = `+${amount} נקודות הוענקו ✓`;
         renderDvPointsHistory(currentDeepViewClientId);
       });
+      });
     });
 
     document.getElementById('dvPointsDeductBtn').addEventListener('click', function () {
@@ -2403,6 +2409,7 @@
       const reason = document.getElementById('dvPointsReason').value.trim();
       if (!amount || amount < 1) { document.getElementById('dvPointsMsg').textContent = 'יש להזין כמות'; return; }
       if (!reason) { document.getElementById('dvPointsMsg').textContent = 'יש להזין סיבה'; return; }
+      ensureAuth(function () {
       withFreshClients(function (clients) {
         const idx = clients.findIndex(c => c.id === currentDeepViewClientId);
         if (idx === -1) return;
@@ -2418,6 +2425,7 @@
         document.getElementById('dvPointsReason').value = '';
         document.getElementById('dvPointsMsg').textContent = `−${amount} נקודות הורדו ✓`;
         renderDvPointsHistory(currentDeepViewClientId);
+      });
       });
     });
 
