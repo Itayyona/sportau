@@ -1279,10 +1279,20 @@
           callback();
           return;
         }
-        firebase.auth().signInAnonymously().then(function () {
-          callback();
-        }).catch(function () {
-          callback(); // proceed anyway
+        // Wait for auth state to be determined first
+        var unsubscribe = firebase.auth().onAuthStateChanged(function (user) {
+          unsubscribe();
+          if (user) {
+            callback();
+          } else {
+            // No existing session, sign in anonymously
+            firebase.auth().signInAnonymously().then(function () {
+              callback();
+            }).catch(function (err) {
+              console.error('Anonymous auth failed:', err);
+              callback(); // proceed anyway
+            });
+          }
         });
       };
 
@@ -2143,9 +2153,6 @@
     // Firebase is unavailable or the fetch fails, so actions still work
     // offline.
     function withFreshClients(mutateFn) {
-      if (!firebase.auth().currentUser) {
-        firebase.auth().signInAnonymously().catch(function () {});
-      }
       if (!window.rtdb) { mutateFn(getClients()); return; }
       window.rtdb.ref('clients').once('value').then(function (snap) {
         const freshClients = normalizeFirebaseArray(snap.val());
