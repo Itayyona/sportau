@@ -1686,10 +1686,10 @@
 
     document.getElementById('checkinBtn').addEventListener('click', function () {
       const btn = this;
-      ensureAuth(function () {
-      withFreshClients(function (clients) {
-        const idx = clients.findIndex(c => c.email === currentClientEmail);
-        if (idx === -1) return;
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === currentClientEmail);
+      if (idx === -1) return;
+      {
         console.log('Checkin triggered for client:', clients[idx]);
         console.log('Firebase auth user:', firebase.auth().currentUser);
         console.log('Today string:', todayStr());
@@ -1747,8 +1747,7 @@
         }
         celebEl.classList.add('show');
         setTimeout(() => celebEl.classList.remove('show'), 2500);
-      });
-      });
+      }
     });
 
     let selectedWorkoutTypes = [];
@@ -1776,10 +1775,10 @@
         return;
       }
       const notes = document.getElementById('workoutNotes').value.trim();
-      ensureAuth(function () {
-      withFreshClients(function (clients) {
-        const idx = clients.findIndex(c => c.email === currentClientEmail);
-        if (idx === -1) return;
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === currentClientEmail);
+      if (idx === -1) return;
+      {
         const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
         const newWorkout = { clientId: clients[idx].id, date: todayStr(), type: [...selectedWorkoutTypes], notes };
         workouts.push(newWorkout);
@@ -1801,8 +1800,7 @@
         renderRewards(clients[idx]);
         selectedWorkoutTypes = [];
         refreshWorkoutState(clients[idx]);
-      });
-      });
+      }
     });
 
     document.getElementById('nutritionSubmit').addEventListener('click', function () {
@@ -1816,10 +1814,10 @@
         nMsgEl.textContent = 'יש להזין קלוריות';
         return;
       }
-      ensureAuth(function () {
-      withFreshClients(function (clients) {
-        const idx = clients.findIndex(c => c.email === currentClientEmail);
-        if (idx === -1) return;
+      const clients = getClients();
+      const idx = clients.findIndex(c => c.email === currentClientEmail);
+      if (idx === -1) return;
+      {
         const nutrition = JSON.parse(localStorage.getItem('nutrition') || '[]');
         const newNutrition = { clientId: clients[idx].id, date: todayStr(), calories, protein, carbs, fat };
         nutrition.push(newNutrition);
@@ -1834,8 +1832,7 @@
         document.getElementById('portalPoints').textContent = clients[idx].points;
         renderRewards(clients[idx]);
         refreshNutritionState(clients[idx]);
-      });
-      });
+      }
     });
 
     // ---- Water / Sleep logging ----
