@@ -1620,6 +1620,7 @@
       strBlock.className = strBlock.className.replace(/streak-\w+\s*/g, '').trim();
       strBlock.classList.add(strVal >= 60 ? 'streak-xl' : strVal >= 30 ? 'streak-lg' : strVal >= 7 ? 'streak-md' : 'streak-sm');
 
+      console.log('showPortal client object:', JSON.stringify({email: client.email, lastCheckIn: client.lastCheckIn, onboarded: client.onboarded}));
       console.log('DEBUG lastCheckIn:', client.lastCheckIn, 'todayStr:', todayStr());
       const alreadyCheckedIn = client.lastCheckIn === todayStr();
       const btn = document.getElementById('checkinBtn');
@@ -1686,6 +1687,9 @@
 
     document.getElementById('checkinBtn').addEventListener('click', function () {
       console.log('checkin clicked');
+      console.log('currentClientEmail:', currentClientEmail);
+      console.log('all clients:', getClients().map(function(c) { return {email: c.email, lastCheckIn: c.lastCheckIn}; }));
+      console.log('found client idx:', getClients().findIndex(function(c) { return c.email === currentClientEmail; }));
       const btn = this;
       const clients = getClients();
       const idx = clients.findIndex(c => c.email === currentClientEmail);
