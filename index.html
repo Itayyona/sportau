@@ -1555,12 +1555,16 @@
     }
 
     function todayStr() {
-      var d = new Date();
-      // Use Israel timezone (UTC+2 or UTC+3 depending on DST)
-      var israelTime = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-      var year = israelTime.getFullYear();
-      var month = String(israelTime.getMonth() + 1).padStart(2, '0');
-      var day = String(israelTime.getDate()).padStart(2, '0');
+      // Shift the absolute UTC timestamp by Israel's offset, then read it
+      // with UTC getters -- this is independent of the device's own
+      // timezone, so it can't be thrown off by what timezone the phone
+      // happens to be set to (unlike using local getters after the shift).
+      var ISRAEL_OFFSET_MINUTES = 180; // Israel is UTC+3 (DST) / UTC+2 (standard)
+      var israelMs = Date.now() + ISRAEL_OFFSET_MINUTES * 60000;
+      var israelDate = new Date(israelMs);
+      var year = israelDate.getUTCFullYear();
+      var month = String(israelDate.getUTCMonth() + 1).padStart(2, '0');
+      var day = String(israelDate.getUTCDate()).padStart(2, '0');
       return year + '-' + month + '-' + day;
     }
 
@@ -1616,6 +1620,7 @@
       strBlock.className = strBlock.className.replace(/streak-\w+\s*/g, '').trim();
       strBlock.classList.add(strVal >= 60 ? 'streak-xl' : strVal >= 30 ? 'streak-lg' : strVal >= 7 ? 'streak-md' : 'streak-sm');
 
+      console.log('DEBUG lastCheckIn:', client.lastCheckIn, 'todayStr:', todayStr());
       const alreadyCheckedIn = client.lastCheckIn === todayStr();
       const btn = document.getElementById('checkinBtn');
       btn.disabled = alreadyCheckedIn;
