@@ -1685,6 +1685,7 @@
     }
 
     document.getElementById('checkinBtn').addEventListener('click', function () {
+      console.log('checkin clicked');
       const btn = this;
       const clients = getClients();
       const idx = clients.findIndex(c => c.email === currentClientEmail);
@@ -2181,23 +2182,7 @@
     function saveClients(clients, allowShrink) {
       localStorage.setItem('clients', JSON.stringify(clients));
       if (!window.rtdb) return;
-      if (allowShrink) {
-        // Deletion or intentional shrink — push directly
-        window.fbSave('clients', clients);
-        return;
-      }
-      // Safety check — only block if shrinking without permission
-      window.rtdb.ref('clients').once('value').then(function (snap) {
-        const existing = snap.val();
-        const existingCount = existing ? normalizeFirebaseArray(existing).length : 0;
-        if (clients.length < existingCount) {
-          console.error('ABORT: trying to save fewer clients. Firebase:', existingCount, 'New:', clients.length);
-          return;
-        }
-        window.fbSave('clients', clients);
-      }).catch(function () {
-        window.fbSave('clients', clients);
-      });
+      window.fbSave('clients', clients);
     }
 
     function renderClientList() {
