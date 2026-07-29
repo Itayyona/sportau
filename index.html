@@ -1555,7 +1555,13 @@
     }
 
     function todayStr() {
-      return new Date().toISOString().slice(0, 10);
+      var d = new Date();
+      // Use Israel timezone (UTC+2 or UTC+3 depending on DST)
+      var israelTime = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+      var year = israelTime.getFullYear();
+      var month = String(israelTime.getMonth() + 1).padStart(2, '0');
+      var day = String(israelTime.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
     }
 
     function refreshWorkoutState(client) {
