@@ -238,6 +238,13 @@
     /* === BUTTON SYSTEM === */
     .btn-checkin { background: linear-gradient(135deg,#c8ff00,#a8df00) !important; color: #000 !important; font-weight: 700; font-size: 16px; height: 52px; border-radius: 12px; border: none; width: 100%; cursor: pointer; }
     .btn-checkin:disabled { background: #1a1a1a !important; color: #555 !important; cursor: default; }
+    #checkinBtn {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
     .btn-outline-lime { width: 100%; height: 52px; border: 1px solid #c8ff00; color: #c8ff00; background: transparent; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
     /* === DATA CARDS === */
     .data-card { background: #141414; border-radius: 12px; padding: 16px; border-left: 3px solid #c8ff00; display: flex; flex-direction: column; gap: 10px; width: 100%; }
@@ -767,7 +774,7 @@
         </div>
         <div class="daily-quote" id="dailyQuote" style="margin:16px 0 4px;"></div>
         <div class="portal-section" style="margin-top:8px;">
-          <button class="btn-checkin" id="checkinBtn">צ׳ק אין יומי</button>
+          <button class="btn-checkin" id="checkinBtn" onclick="handleCheckin()" ontouchend="handleCheckin(event)">צ׳ק אין יומי</button>
           <p class="portal-feedback" id="checkinMsg"></p>
         </div>
       </div>
@@ -1622,10 +1629,20 @@
 
       console.log('showPortal client object:', JSON.stringify({email: client.email, lastCheckIn: client.lastCheckIn, onboarded: client.onboarded}));
       console.log('DEBUG lastCheckIn:', client.lastCheckIn, 'todayStr:', todayStr());
-      const alreadyCheckedIn = client.lastCheckIn === todayStr();
-      const btn = document.getElementById('checkinBtn');
+      var lastCI = client.lastCheckIn || '';
+      var alreadyCheckedIn = lastCI.length >= 8 && lastCI === todayStr();
+      var btn = document.getElementById('checkinBtn');
       btn.disabled = alreadyCheckedIn;
+      btn.style.opacity = alreadyCheckedIn ? '0.5' : '1';
+      btn.style.pointerEvents = alreadyCheckedIn ? 'none' : 'auto';
       document.getElementById('checkinMsg').textContent = alreadyCheckedIn ? "כבר צ'קת אין היום" : '';
+      // Defensive: a celebration overlay can get stuck visible (blocking
+      // all touches underneath) if its dismiss setTimeout never fires
+      // because the tab was backgrounded when it was scheduled.
+      var stuckCeleb = document.getElementById('checkinCelebration');
+      if (stuckCeleb) stuckCeleb.classList.remove('show');
+      var stuckWCeleb = document.getElementById('workoutCelebration');
+      if (stuckWCeleb) stuckWCeleb.classList.remove('show');
 
       document.getElementById('workoutMsg').textContent = '';
       document.getElementById('nutritionMsg').textContent = '';
@@ -1685,12 +1702,17 @@
       window.updateBellBtn && window.updateBellBtn();
     }
 
-    document.getElementById('checkinBtn').addEventListener('click', function () {
+    // Wired directly via onclick/ontouchend on the button (see HTML) instead
+    // of addEventListener -- both call this same function, so it must not
+    // re-dispatch a click on the button itself (that would recurse).
+    function handleCheckin(e) {
+      if (e) e.preventDefault();
       console.log('checkin clicked');
+      var btn = document.getElementById('checkinBtn');
+      if (!btn || btn.disabled) return;
       console.log('currentClientEmail:', currentClientEmail);
       console.log('all clients:', getClients().map(function(c) { return {email: c.email, lastCheckIn: c.lastCheckIn}; }));
       console.log('found client idx:', getClients().findIndex(function(c) { return c.email === currentClientEmail; }));
-      const btn = this;
       const clients = getClients();
       const idx = clients.findIndex(c => c.email === currentClientEmail);
       if (idx === -1) return;
@@ -1729,6 +1751,8 @@
           });
         }
         btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none';
         document.getElementById('portalStreak').textContent = streak;
         document.getElementById('portalPoints').textContent = clients[idx].points;
         document.getElementById('checkinMsg').textContent = 'כל הכבוד! +20 נקודות' + bonusMsg;
@@ -1753,7 +1777,7 @@
         celebEl.classList.add('show');
         setTimeout(() => celebEl.classList.remove('show'), 2500);
       }
-    });
+    }
 
     let selectedWorkoutTypes = [];
 
@@ -2642,6 +2666,34 @@
       document.getElementById('adminPanel').style.display = 'flex';
     });
 
+    // One-time cleanup: some clients' lastCheckIn may still be in an old
+    // slash-based date format from before todayStr() switched to
+    // YYYY-MM-DD, which would never match todayStr() and could leave the
+    // checkin button in a wrong state. Runs once per staff session.
+    function fixOldCheckinDateFormats() {
+      if (window._didFixOldCheckinDates) return;
+      window._didFixOldCheckinDates = true;
+      if (!window.rtdb) return;
+      window.rtdb.ref('clients').once('value').then(function (snap) {
+        var clients = normalizeFirebaseArray(snap.val());
+        var today = todayStr();
+        var changed = false;
+        clients = clients.map(function (c) {
+          if (c.lastCheckIn && c.lastCheckIn !== today && c.lastCheckIn.includes('/')) {
+            c.lastCheckIn = null;
+            changed = true;
+          }
+          return c;
+        });
+        if (changed) {
+          window.fbSave('clients', clients);
+          console.log('Fixed old date formats for clients');
+        }
+      }).catch(function (err) {
+        console.error('fixOldCheckinDateFormats failed:', err);
+      });
+    }
+
     function showAdminPanel() {
       hideAllScreens();
       document.getElementById('adminPanel').style.display = 'flex';
@@ -2654,6 +2706,7 @@
       renderRedemptions();
       renderClientStatusCards();
       renderClientList();
+      fixOldCheckinDateFormats();
     }
 
     document.getElementById('submitBtn').addEventListener('click', function () {
