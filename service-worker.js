@@ -1,4 +1,4 @@
-const CACHE = 'sportau-v3';
+const CACHE = 'sportau-v4';
 const ASSETS = ['index.html', 'manifest.json', 'service-worker.js'];
 
 self.addEventListener('install', e => {

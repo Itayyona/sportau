@@ -245,6 +245,10 @@
       user-select: none;
       -webkit-user-select: none;
     }
+    #workoutSubmit, #nutritionSubmit, #waterSubmit, #sleepSubmit, #stepsSubmit, .btn-redeem, .btn-checkin {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
     .btn-outline-lime { width: 100%; height: 52px; border: 1px solid #c8ff00; color: #c8ff00; background: transparent; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
     /* === DATA CARDS === */
     .data-card { background: #141414; border-radius: 12px; padding: 16px; border-left: 3px solid #c8ff00; display: flex; flex-direction: column; gap: 10px; width: 100%; }
@@ -1610,6 +1614,27 @@
         lockedCard.style.display = 'none';
       }
     }
+
+    // Re-check date-dependent portal state (locked cards, checkin button)
+    // when the tab becomes visible again, so a midnight rollover while the
+    // app was backgrounded doesn't leave yesterday's state stuck on screen.
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible' && currentClientEmail) {
+        var clients = getClients();
+        var client = clients.find(function(c) { return c.email === currentClientEmail; });
+        if (client) {
+          refreshWorkoutState(client);
+          refreshNutritionState(client);
+          var alreadyCheckedIn = (client.lastCheckIn || '') === todayStr();
+          var btn = document.getElementById('checkinBtn');
+          if (btn) {
+            btn.disabled = alreadyCheckedIn;
+            btn.style.opacity = alreadyCheckedIn ? '0.5' : '1';
+            btn.style.pointerEvents = alreadyCheckedIn ? 'none' : 'auto';
+          }
+        }
+      }
+    });
 
     function showPortal(client) {
       hideAllScreens();
@@ -3106,7 +3131,9 @@
 
     // ---- checkWeeklySummary ----
     function checkWeeklySummary(client) {
-      if (new Date().getDay() !== 0) return;
+      var israelNow = new Date(Date.now() + 180 * 60000);
+      var dayOfWeek = israelNow.getUTCDay();
+      if (dayOfWeek !== 0) return; // Sunday in Israel time
       const weekKey = 'weeklySummary_' + Math.floor(Date.now() / (7 * 864e5));
       if (localStorage.getItem(weekKey)) return;
       localStorage.setItem(weekKey, '1');
