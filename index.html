@@ -244,6 +244,8 @@
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
+      position: relative;
+      z-index: 999;
     }
     #workoutSubmit, #nutritionSubmit, #waterSubmit, #sleepSubmit, #stepsSubmit, .btn-redeem, .btn-checkin {
       touch-action: manipulation;
@@ -267,6 +269,7 @@
     /* === BOTTOM SHEET === */
     .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
     .sheet-overlay.open { display: flex; }
+    .sheet-overlay:not(.open) { pointer-events: none !important; }
     .sheet-box { background: #111; border-radius: 20px 20px 0 0; width: 100%; max-width: 480px; padding: 20px; display: flex; flex-direction: column; gap: 10px; animation: slideUp .25s ease; max-height: 90vh; overflow-y: auto; }
     @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
     .sheet-name { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 4px; }
@@ -278,6 +281,10 @@
     /* === CELEBRATION OVERLAYS === */
     .celeb-overlay { position: fixed; inset: 0; background: #000; z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
     .celeb-overlay.show { display: flex; }
+    /* Defensive: these are display:none by default so they already can't
+       block clicks when hidden, but this guards against any future change
+       that swaps display for visibility/opacity toggling. */
+    .celeb-overlay:not(.show) { pointer-events: none !important; }
     .celeb-emoji { font-size: 80px; animation: bouncePop .4s ease; }
     @keyframes bouncePop { 0%{transform:scale(0)} 70%{transform:scale(1.15)} 100%{transform:scale(1)} }
     .celeb-number { font-size: 80px; font-weight: 900; color: #c8ff00; line-height: 1; }
@@ -289,6 +296,7 @@
     /* === WEEKLY SUMMARY === */
     .wsummary-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.96); z-index: 250; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; gap: 20px; }
     .wsummary-overlay.show { display: flex; }
+    .wsummary-overlay:not(.show) { pointer-events: none !important; }
     .wsummary-card { background: #141414; border-radius: 14px; padding: 20px; width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 14px; }
     .wsummary-row { display: flex; justify-content: space-between; font-size: 15px; color: #ccc; }
     .wsummary-val { color: #c8ff00; font-weight: 700; }
@@ -445,6 +453,7 @@
       justify-content: center;
     }
     #a11yPanel.open { display: flex; }
+    #a11yPanel:not(.open) { pointer-events: none !important; }
     #a11yPanelBox {
       background: #141414;
       border-radius: 20px 20px 0 0;
