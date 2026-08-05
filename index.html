@@ -195,6 +195,9 @@
     .portal-tab-btn .tab-label { font-size: 11px; line-height: 1; }
     .portal-tab-btn.active { color: #c8ff00; }
     .portal-tab-content { width: 100%; display: flex; flex-direction: column; gap: 24px; padding: 20px 0 8px; }
+    /* Home tab specifically -- its last element is checkinBtn, which needs
+       clearance from the fixed WhatsApp/a11y buttons and bottom tab bar. */
+    #portalTab-home { padding-bottom: 120px; }
     /* Step form */
     .step-progress { display: flex; align-items: stretch; width: 100%; margin-bottom: 4px; }
     .step-dot { flex: 1; background: transparent; border: 1px solid #2a2a2a; border-right: none; color: #555; padding: 10px 4px; font-size: 12px; cursor: pointer; text-align: center; line-height: 1.4; }
@@ -426,7 +429,7 @@
     /* ===== ACCESSIBILITY BUTTON & PANEL ===== */
     #a11yBtn {
       position: fixed;
-      bottom: 72px;
+      bottom: 140px;
       right: 16px;
       width: 48px;
       height: 48px;
@@ -908,7 +911,7 @@
       </div>
 
       <!-- WhatsApp fixed button -->
-      <button onclick="window.open('https://wa.me/972524046296','_blank')" style="position:fixed;bottom:70px;left:16px;width:52px;height:52px;border-radius:50%;background:#25D366;border:none;font-size:24px;cursor:pointer;z-index:100;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.4);">💬</button>
+      <button onclick="window.open('https://wa.me/972524046296','_blank')" style="position:fixed;bottom:140px;left:16px;width:52px;height:52px;border-radius:50%;background:#25D366;border:none;font-size:24px;cursor:pointer;z-index:100;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.4);">💬</button>
 
       <!-- Bottom tab bar -->
       <div class="portal-tab-bar">
